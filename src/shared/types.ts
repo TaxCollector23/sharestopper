@@ -73,3 +73,20 @@ export interface PipelineMetrics {
   frameSkipped: boolean
   detectionsFound: number
 }
+
+export interface EntropyResult {
+  value: string
+  entropy: number
+  index: number
+  length: number
+}
+
+export interface DetectionStats {
+  totalDetections: number
+  byType: Record<string, number>
+  avgConfidence: number
+  avgDetectionMs: number
+  entropyDetections: number
+  prefixSkips: number
+  regexExecutions: number
+}

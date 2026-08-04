@@ -38,6 +38,12 @@ const PATTERNS = [
   { type: 'supabase-url', label: 'Supabase URL', regex: /https:\/\/[a-z0-9]+\.supabase\.co/g, confidence: 0.85 },
   { type: 'cookie', label: 'Session Cookie', regex: /(?:session|sess|sid|connect\.sid)\s*[:=]\s*['"]?[a-zA-Z0-9_\-/.%]{16,}/gi, confidence: 0.80 },
   { type: 'generic-secret', label: 'Hex Secret', regex: /(?:secret|token|private)\s*[:=]\s*['"]?[a-f0-9]{32,}/gi, confidence: 0.72 },
+  { type: 'generic-secret', label: 'SendGrid Key', regex: /SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}/g, confidence: 0.96 },
+  { type: 'generic-secret', label: 'npm Token', regex: /npm_[a-zA-Z0-9]{36}/g, confidence: 0.95 },
+  { type: 'generic-secret', label: 'Vault Token', regex: /hvs\.[a-zA-Z0-9_-]{24,}/g, confidence: 0.94 },
+  { type: 'generic-secret', label: 'Vercel Token', regex: /vercel_[a-zA-Z0-9_-]{24,}/g, confidence: 0.93 },
+  { type: 'generic-secret', label: 'Netlify Token', regex: /nfp_[a-zA-Z0-9]{40,}/g, confidence: 0.93 },
+  { type: 'generic-secret', label: 'Doppler Token', regex: /dp\.st\.[a-zA-Z0-9_-]{40,}/g, confidence: 0.93 },
 ]
 
 const BUILTIN_SAFE = [
@@ -477,6 +483,74 @@ section('OCR Noise Resistance')
   assertDetects('sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p', 'openai-key', 'OCR: clean OpenAI key detected')
   assertDetects('AKIA' + 'I0SFODNN7REALKEY', 'aws-key', 'OCR: AWS key with O→0 substitution')
   assertDetects('postgresql://user:pass@db.host.com:5432/prod', 'postgres-url', 'OCR: clean Postgres URL detected')
+}
+
+// ── New Vendor Patterns ────────────────────────────────────────────
+
+section('SendGrid, npm, Vault, Vercel, Netlify, Doppler Tokens')
+{
+  assertDetects('SG.abcdefghijklmnopqrstuv.ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr', 'generic-secret', 'SendGrid API key detected')
+  assertDetects('npm_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789', 'generic-secret', 'npm token detected')
+  assertDetects('hvs' + '.CAESIJNieNh1ZDY2bnVqNW9GR', 'generic-secret', 'Vault token detected')
+  assertDetects('vercel_aBcDeFgHiJkLmNoPqRsTuVwXyZ01', 'generic-secret', 'Vercel token detected')
+  assertDetects('nfp_aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEF', 'generic-secret', 'Netlify token detected')
+  assertDetects('dp.st.aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789ABCDEF01234', 'generic-secret', 'Doppler token detected')
+}
+
+// ── Entropy Detection ─────────────────────────────────────────────
+
+section('Shannon Entropy Detection')
+{
+  function shannonEntropy(str) {
+    const freq = new Map()
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i)
+      freq.set(c, (freq.get(c) || 0) + 1)
+    }
+    let entropy = 0
+    const len = str.length
+    for (const count of freq.values()) {
+      const p = count / len
+      entropy -= p * Math.log2(p)
+    }
+    return entropy
+  }
+
+  const highEntropy = 'aB3xK9mT4qR8sN2pL5jH7gF3dC1bA0z'
+  const lowEntropy = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  assert(shannonEntropy(highEntropy) > 3.5, `High-entropy string detected: ${shannonEntropy(highEntropy).toFixed(2)} bits`)
+  assert(shannonEntropy(lowEntropy) < 1.0, `Low-entropy string filtered: ${shannonEntropy(lowEntropy).toFixed(2)} bits`)
+
+  const realSecret = 'xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v'
+  assert(shannonEntropy(realSecret) > 4.0, `Real secret has high entropy: ${shannonEntropy(realSecret).toFixed(2)} bits`)
+}
+
+// ── Batch Detection ───────────────────────────────────────────────
+
+section('Batch Detection')
+{
+  const texts = [
+    'API_KEY=' + 'sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p',
+    'Clean text with no secrets at all',
+    'ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9vAB',
+  ]
+  const batchResults = texts.map(t => detect(t))
+  assert(batchResults[0].length > 0, 'Batch: first text has detections')
+  assert(batchResults[1].length === 0, 'Batch: second text is clean')
+  assert(batchResults[2].length > 0, 'Batch: third text has detections')
+}
+
+// ── Priority Ordering ─────────────────────────────────────────────
+
+section('Pattern Priority')
+{
+  const text = 'sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p and email admin@company.com'
+  const results = detectRaw(text)
+  const keyResult = results.find(r => r.type === 'openai-key')
+  const emailResult = results.find(r => r.type === 'email')
+  assert(keyResult, 'Priority: OpenAI key detected')
+  assert(emailResult, 'Priority: email detected')
+  assert(keyResult && emailResult, 'Priority: both P0 and P3 patterns work together')
 }
 
 // ── Summary ────────────────────────────────────────────────────────

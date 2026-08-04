@@ -132,7 +132,7 @@
         <div class="pipe-num">4</div>
         <div class="pipe-info">
           <strong>Patterns matched</strong>
-          <p>27 compiled regex patterns scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, and more. <a href="/benchmarks">See benchmarks.</a></p>
+          <p>38 compiled regex patterns with trie-based prefix matching scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, SendGrid, npm, Vault, Vercel, and more. <a href="/benchmarks">See benchmarks.</a></p>
         </div>
         <div class="pipe-right">
           <div class="pipe-time">0.11ms</div>
@@ -159,14 +159,14 @@
   <div class="wrap">
     <div class="sh">
       <div class="label">Coverage</div>
-      <h2>29 sensitive data types</h2>
-      <p>Every pattern tested against real-world formats. 114 tests passing. Zero false positives on normal code and conversation.</p>
+      <h2>38 sensitive data types</h2>
+      <p>Every pattern tested against real-world formats. 158 tests passing. Zero false positives on normal code and conversation.</p>
     </div>
     <div class="type-list">
       <div class="type-group">
         <h4>Credentials</h4>
         <ul>
-          <li>API keys <span class="dim">(OpenAI, Anthropic, AWS, GitHub, Stripe, Google)</span></li>
+          <li>API keys <span class="dim">(OpenAI, Anthropic, AWS, GitHub, Stripe, Google, SendGrid)</span></li>
           <li>Secret keys &amp; access tokens</li>
           <li>Passwords <span class="dim">(env vars, inline, DB connection strings)</span></li>
           <li>OAuth client secrets</li>
@@ -182,6 +182,7 @@
           <li>SSH / RSA private key headers</li>
           <li>Webhook URLs <span class="dim">(Slack, Discord)</span></li>
           <li>Twilio credentials</li>
+          <li>Vendor tokens <span class="dim">(Vercel, Netlify, Vault, npm, Doppler)</span></li>
         </ul>
       </div>
       <div class="type-group">
@@ -319,6 +320,11 @@ document.querySelectorAll('.pipe-step').forEach(el => {
     { text: '# Services', type: null },
     { text: 'GITHUB_TOKEN=ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v', type: 'token', label: 'GitHub Token', color: '#ef4444', start: 13, end: 49 },
     { text: 'SLACK_WEBHOOK=https://hooks.slack.com/services/T01/B89/xYz', type: 'webhook', label: 'Slack Webhook', color: '#60a5fa', start: 14, end: 57 },
+    { text: '', type: null },
+    { text: '# Vendor Tokens', type: null },
+    { text: 'SENDGRID_KEY=SG.abcdefghijklmnopqrstuv.ABCDEFGHIJKLMNOPQRST', type: 'api-key', label: 'SendGrid Key', color: '#ef4444', start: 13, end: 56 },
+    { text: 'VAULT_TOKEN=' + 'hvs' + '.CAESIJNieNh1ZDY2bnVqNW9G', type: 'token', label: 'Vault Token', color: '#f59e0b', start: 12, end: 40 },
+    { text: 'VERCEL_TOKEN=vercel_aBcDeFgHiJkLmNoPqRsTuVwXyZ01', type: 'token', label: 'Vercel Token', color: '#a78bfa', start: 13, end: 46 },
     { text: '', type: null },
     { text: '# Contact', type: null },
     { text: 'ADMIN_EMAIL=admin@company.com', type: 'pii', label: 'Email Address', color: '#34d399', start: 12, end: 28 },
