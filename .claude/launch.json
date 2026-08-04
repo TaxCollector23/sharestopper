@@ -5,7 +5,7 @@
       "name": "sharestopper-dev",
       "runtimeExecutable": "node",
       "runtimeArgs": ["website/server.mjs"],
-      "port": 1011
+      "port": 3011
     }
   ]
 }

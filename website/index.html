@@ -48,6 +48,7 @@
       <h2>See it in action</h2>
       <p>This is what ShareStopper sees on your screen. Secrets are detected and covered in real-time.</p>
     </div>
+    <div class="demo-glow">
     <div class="demo-container">
       <div class="demo-chrome">
         <div class="demo-bar">
@@ -60,7 +61,28 @@
         </div>
         <div class="demo-editor" id="demo-editor"></div>
       </div>
-      <div class="demo-feed" id="demo-feed"></div>
+      <div class="demo-sidebar">
+        <div class="demo-sidebar-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>ShareStopper</span>
+        </div>
+        <div class="demo-stats">
+          <div class="demo-stat">
+            <span class="demo-stat-num" id="demo-count">0</span>
+            <span class="demo-stat-label">blocked</span>
+          </div>
+          <div class="demo-stat">
+            <span class="demo-stat-num" id="demo-latency">—</span>
+            <span class="demo-stat-label">avg ms</span>
+          </div>
+        </div>
+        <div class="demo-feed" id="demo-feed"></div>
+        <button class="demo-replay" id="demo-replay" style="display:none">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+          Replay
+        </button>
+      </div>
+    </div>
     </div>
   </div>
 </section>
@@ -79,7 +101,10 @@
           <strong>Screen sharing detected</strong>
           <p>Monitors Zoom, Google Meet, Teams, Discord, and Slack for active sharing using macOS system APIs and process inspection. Activates automatically — no manual toggle.</p>
         </div>
-        <div class="pipe-time">~0ms</div>
+        <div class="pipe-right">
+          <div class="pipe-time">~0ms</div>
+          <div class="pipe-bar"><div class="pipe-bar-fill" style="width:2%;background:var(--green)"></div></div>
+        </div>
       </div>
       <div class="pipe-step" data-stage="capture">
         <div class="pipe-num">2</div>
@@ -87,7 +112,10 @@
           <strong>Screen captured</strong>
           <p>Native-resolution capture via macOS <code>screencapture</code>. Frame differencing means only changed regions get re-scanned on subsequent passes.</p>
         </div>
-        <div class="pipe-time">~200ms</div>
+        <div class="pipe-right">
+          <div class="pipe-time">~200ms</div>
+          <div class="pipe-bar"><div class="pipe-bar-fill" style="width:33%;background:var(--amber)"></div></div>
+        </div>
       </div>
       <div class="pipe-step" data-stage="ocr">
         <div class="pipe-num">3</div>
@@ -95,7 +123,10 @@
           <strong>Text extracted</strong>
           <p>Tesseract.js OCR extracts all visible text with word-level bounding boxes, giving precise coordinates for overlay placement.</p>
         </div>
-        <div class="pipe-time">~400ms</div>
+        <div class="pipe-right">
+          <div class="pipe-time">~400ms</div>
+          <div class="pipe-bar"><div class="pipe-bar-fill" style="width:67%;background:var(--amber)"></div></div>
+        </div>
       </div>
       <div class="pipe-step" data-stage="match">
         <div class="pipe-num">4</div>
@@ -103,7 +134,10 @@
           <strong>Patterns matched</strong>
           <p>27 compiled regex patterns scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, and more. <a href="/benchmarks">See benchmarks.</a></p>
         </div>
-        <div class="pipe-time">0.11ms</div>
+        <div class="pipe-right">
+          <div class="pipe-time">0.11ms</div>
+          <div class="pipe-bar"><div class="pipe-bar-fill" style="width:4%;background:var(--green)"></div></div>
+        </div>
       </div>
       <div class="pipe-step" data-stage="overlay">
         <div class="pipe-num">5</div>
@@ -111,7 +145,10 @@
           <strong>Overlay rendered</strong>
           <p>Block, blur, or pixelate overlays appear over matched regions. Invisible to your workflow, opaque to everyone on the call.</p>
         </div>
-        <div class="pipe-time">&lt;1ms</div>
+        <div class="pipe-right">
+          <div class="pipe-time">&lt;1ms</div>
+          <div class="pipe-bar"><div class="pipe-bar-fill" style="width:4%;background:var(--green)"></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -214,8 +251,18 @@
   </div>
 </section>
 
+<section class="cta">
+  <div class="wrap">
+    <h2>Start protecting your screen</h2>
+    <p>One command. Works with Zoom, Meet, Teams, Discord, and Slack.</p>
+    <div class="cta-install" id="cta-install">
+      <span class="hl">curl -fsSL</span> ...sharestopper/install.sh | bash
+    </div>
+  </div>
+</section>
+
 <footer>
-  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center">
+  <div class="wrap">
     <div class="left">ShareStopper</div>
     <div class="right">
       <a href="/docs">Docs</a>
@@ -233,6 +280,15 @@ cmd.addEventListener('click', () => {
   navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/TaxCollector23/sharestopper/main/website/install.sh | bash');
   cmd.dataset.copied = 'true';
   setTimeout(() => delete cmd.dataset.copied, 1200);
+});
+
+const ctaInstall = document.getElementById('cta-install');
+ctaInstall.style.cursor = 'pointer';
+ctaInstall.title = 'Click to copy';
+ctaInstall.addEventListener('click', () => {
+  navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/TaxCollector23/sharestopper/main/website/install.sh | bash');
+  ctaInstall.dataset.copied = 'true';
+  setTimeout(() => delete ctaInstall.dataset.copied, 1200);
 });
 
 document.querySelectorAll('.pipe-step').forEach(el => {
@@ -274,91 +330,175 @@ document.querySelectorAll('.pipe-step').forEach(el => {
   const feed = document.getElementById('demo-feed');
   const statusText = document.getElementById('demo-status-text');
   const statusDot = document.querySelector('.demo-dot');
+  const countEl = document.getElementById('demo-count');
+  const latencyEl = document.getElementById('demo-latency');
+  const replayBtn = document.getElementById('demo-replay');
 
   let lineIndex = 0;
   let detections = 0;
+  let totalLatency = 0;
+  let running = false;
 
-  function escapeHtml(str) {
+  function esc(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  function addLine() {
-    if (lineIndex >= DEMO_LINES.length) {
-      statusText.textContent = detections + ' secrets blocked';
-      statusDot.style.background = '#34d399';
-      return;
-    }
+  function buildDemo() {
+    editor.innerHTML = '';
+    feed.innerHTML = '';
+    countEl.textContent = '0';
+    latencyEl.textContent = '—';
+    replayBtn.style.display = 'none';
+    statusDot.classList.remove('steady');
 
-    const line = DEMO_LINES[lineIndex];
-    const lineEl = document.createElement('div');
-    lineEl.className = 'demo-line';
+    let time = 0;
+    let secretCount = 0;
+    const secrets = [];
 
-    const numEl = document.createElement('span');
-    numEl.className = 'demo-ln';
-    numEl.textContent = (lineIndex + 1).toString().padStart(2);
+    DEMO_LINES.forEach((line, i) => {
+      const lineEl = document.createElement('div');
+      lineEl.className = 'demo-line demo-hidden';
+      lineEl.style.animationDelay = time + 'ms';
 
-    const codeEl = document.createElement('span');
-    codeEl.className = 'demo-code';
+      const numEl = document.createElement('span');
+      numEl.className = 'demo-ln';
+      numEl.textContent = (i + 1).toString().padStart(2);
 
-    if (line.type) {
-      const before = escapeHtml(line.text.slice(0, line.start));
-      const secret = escapeHtml(line.text.slice(line.start, line.end));
-      const after = escapeHtml(line.text.slice(line.end));
-      codeEl.innerHTML = before + '<span class="demo-secret" style="--c:' + line.color + '">' + secret + '<span class="demo-block" style="background:' + line.color + '"></span></span>' + after;
+      const codeEl = document.createElement('span');
+      codeEl.className = 'demo-code';
+
+      if (line.text === '') {
+        // empty line
+      } else if (line.type) {
+        const before = esc(line.text.slice(0, line.start));
+        const secretLen = line.end - line.start;
+        const redacted = '█'.repeat(secretLen);
+        const after = esc(line.text.slice(line.end));
+        const detectTime = time + 180;
+        codeEl.innerHTML = before +
+          '<span class="demo-secret" style="--c:' + line.color + ';animation-delay:' + detectTime + 'ms;color:' + line.color + '">' +
+            redacted +
+          '</span>' + after;
+
+        secretCount++;
+        const lat = +(Math.random() * 0.06 + 0.008).toFixed(3);
+        secrets.push({ lineEl, detectTime, line, lat, num: secretCount });
+      } else if (line.text.startsWith('#')) {
+        codeEl.innerHTML = '<span class="demo-comment">' + esc(line.text) + '</span>';
+      } else {
+        codeEl.textContent = line.text;
+      }
 
       lineEl.appendChild(numEl);
       lineEl.appendChild(codeEl);
       editor.appendChild(lineEl);
-      editor.scrollTop = editor.scrollHeight;
 
-      // Animate the detection after a brief delay
-      setTimeout(() => {
-        const secretEl = lineEl.querySelector('.demo-secret');
-        const blockEl = lineEl.querySelector('.demo-block');
-        if (secretEl && blockEl) {
-          secretEl.classList.add('detected');
-          detections++;
+      time += line.text === '' ? 30 : line.type ? 250 : 60;
+    });
 
-          // Add to feed
-          const feedItem = document.createElement('div');
-          feedItem.className = 'demo-feed-item';
-          feedItem.innerHTML = '<span class="demo-feed-dot" style="background:' + line.color + '"></span>' +
-            '<span class="demo-feed-label">' + line.label + '</span>' +
-            '<span class="demo-feed-time">' + (Math.random() * 0.08 + 0.01).toFixed(3) + 'ms</span>';
-          feed.insertBefore(feedItem, feed.firstChild);
-          setTimeout(() => feedItem.classList.add('visible'), 10);
+    // Build feed items (in reverse order for prepend effect)
+    secrets.forEach((s, idx) => {
+      const feedItem = document.createElement('div');
+      feedItem.className = 'demo-feed-item demo-hidden';
+      feedItem.style.animationDelay = s.detectTime + 'ms';
+      feedItem.innerHTML =
+        '<span class="demo-feed-dot" style="background:' + s.line.color + '"></span>' +
+        '<span class="demo-feed-label">' + s.line.label + '</span>' +
+        '<span class="demo-feed-time">' + s.lat.toFixed(3) + 'ms</span>';
+      feed.appendChild(feedItem);
+    });
 
-          statusText.textContent = 'Scanning... ' + detections + ' found';
-        }
-      }, 300);
-    } else {
-      codeEl.textContent = line.text;
-      lineEl.appendChild(numEl);
-      lineEl.appendChild(codeEl);
-      editor.appendChild(lineEl);
-      editor.scrollTop = editor.scrollHeight;
-    }
-
-    lineIndex++;
-    const delay = line.text === '' ? 80 : line.type ? 400 : 120;
-    setTimeout(addLine, delay);
+    // Store total time for status updates
+    return { totalTime: time + 300, secrets };
   }
 
-  // Start demo when section scrolls into view
-  let started = false;
-  const observer = new IntersectionObserver(entries => {
-    if (entries[0].isIntersecting && !started) {
-      started = true;
-      statusText.textContent = 'Screen share detected...';
-      statusDot.style.background = '#f59e0b';
+  function startDemo() {
+    if (running) return;
+    running = true;
+    const { totalTime, secrets } = buildDemo();
+
+    statusText.textContent = 'Screen share detected...';
+    statusDot.style.background = '#f59e0b';
+    statusDot.classList.add('pulse');
+
+    // Activate CSS animations synchronously
+    editor.classList.add('demo-playing');
+    feed.classList.add('demo-playing');
+
+    // Track detections: schedule each secret detection at its time
+    let detected = 0;
+    let totalLat = 0;
+
+    statusText.textContent = 'Scanning...';
+    statusDot.style.background = '#ef4444';
+
+    // Reveal lines as their animation-delay passes
+    var allLines = editor.querySelectorAll('.demo-line.demo-hidden');
+    allLines.forEach(function(el) {
+      var d = parseInt(el.style.animationDelay) || 0;
+      setTimeout(function() { el.classList.remove('demo-hidden'); el.style.opacity = 1; }, d + 300);
+    });
+
+    // Reveal feed items
+    var allFeed = feed.querySelectorAll('.demo-feed-item.demo-hidden');
+    allFeed.forEach(function(el) {
+      var d = parseInt(el.style.animationDelay) || 0;
+      setTimeout(function() { el.classList.remove('demo-hidden'); el.style.opacity = 1; }, d + 300);
+    });
+
+    secrets.forEach((s, idx) => {
       setTimeout(() => {
-        statusText.textContent = 'Scanning...';
-        statusDot.style.background = '#ef4444';
-        addLine();
-      }, 800);
-    }
-  }, { threshold: 0.3 });
+        s.lineEl.classList.add('demo-line-flash');
+        detected++;
+        totalLat += s.lat;
+        countEl.textContent = detected;
+        latencyEl.textContent = (totalLat / detected).toFixed(3);
+        statusText.textContent = 'Scanning... ' + detected + ' found';
+
+        if (detected >= secrets.length) {
+          statusText.textContent = detected + ' secrets blocked';
+          statusDot.style.background = '#34d399';
+          statusDot.classList.remove('pulse');
+          statusDot.classList.add('steady');
+          replayBtn.style.display = '';
+          running = false;
+        }
+      }, s.detectTime);
+    });
+  }
+
+  replayBtn.addEventListener('click', () => {
+    running = false;
+    editor.classList.remove('demo-playing');
+    feed.classList.remove('demo-playing');
+    void editor.offsetHeight;
+    startDemo();
+  });
+
+  // Start when the demo scrolls into view
+  let hasStarted = false;
+  function tryStart() {
+    if (hasStarted) return;
+    hasStarted = true;
+    startDemo();
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) tryStart();
+  }, { threshold: 0.2 });
   observer.observe(document.querySelector('.demo-container'));
+
+  // Fallback: scroll check + timeout
+  function checkScroll() {
+    if (hasStarted) return;
+    const rect = document.querySelector('.demo-container').getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) tryStart();
+  }
+  window.addEventListener('scroll', checkScroll, {passive: true});
+  setTimeout(checkScroll, 500);
+
+  // Allow programmatic trigger
+  window.__demoStart = tryStart;
 })();
 </script>
 

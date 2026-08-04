@@ -4,7 +4,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const PORT = 1011
+const PORT = process.env.PORT || 3011
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
