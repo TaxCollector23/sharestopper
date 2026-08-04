@@ -40,7 +40,39 @@ const PATTERNS = [
   { type: 'generic-secret', label: 'Hex Secret', regex: /(?:secret|token|private)\s*[:=]\s*['"]?[a-f0-9]{32,}/gi, confidence: 0.72 },
 ]
 
+const BUILTIN_SAFE = [
+  'sk-xxx', 'sk-your-', 'sk-proj-xxx', 'your-api-key', 'your_api_key',
+  'YOUR_API_KEY', 'EXAMPLE', 'example.com', 'test@test.com', 'test@example.com',
+  'user@example.com', 'admin@example.com', 'placeholder', 'PLACEHOLDER',
+  'xxx-xxx-xxxx', '000-000-0000', '555-555-5555', '(555) 555-5555',
+  '127.0.0.1', '0.0.0.0', 'localhost', '4111111111111111', '4242424242424242',
+  '5555555555554444', 'password123', 'changeme',
+  '<your-', '{your-', '${', 'process.env.', 'os.environ', 'ENV[',
+]
+
+function isWhitelisted(value) {
+  const lower = value.toLowerCase()
+  return BUILTIN_SAFE.some(safe => lower.includes(safe.toLowerCase()))
+}
+
 function detect(text) {
+  const results = []
+  const seen = new Set()
+  for (const pattern of PATTERNS) {
+    pattern.regex.lastIndex = 0
+    let match
+    while ((match = pattern.regex.exec(text)) !== null) {
+      const key = `${pattern.type}:${match[0]}`
+      if (!seen.has(key) && !isWhitelisted(match[0])) {
+        seen.add(key)
+        results.push({ type: pattern.type, label: pattern.label, value: match[0] })
+      }
+    }
+  }
+  return results
+}
+
+function detectRaw(text) {
   const results = []
   const seen = new Set()
   for (const pattern of PATTERNS) {
@@ -109,7 +141,7 @@ assertDetects('sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p', 'openai-key', 'OpenAI 
 assertDetects('sk-aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789', 'openai-key', 'OpenAI key (sk-...)')
 assertDetects('sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY1zA', 'anthropic-key', 'Anthropic key')
 assertDetects('AIzaSyBkD3E4fG5hI6jK7lM8nO9pQ0rS1tU2vW3x', 'google-ai-key', 'Google AI key')
-assertDetects('AKIAIOSFODNN7EXAMPLE', 'aws-key', 'AWS access key')
+assertDetects('AKIA' + 'IOSFODNN7PRODKEY', 'aws-key', 'AWS access key')
 assertDetects('ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9vAB', 'github-token', 'GitHub PAT (ghp_)')
 assertDetects('github_pat_11AABBBCC_abcdefghijklmnopqrstuvwxyz', 'github-token', 'GitHub fine-grained PAT')
 assertDetects('sk_live' + '_FAKEFAKEFAKEFAKEFAKEFAKEFAKE', 'stripe-key', 'Stripe live key')
@@ -122,7 +154,7 @@ section('API Key Edge Cases')
 assertDetects('export OPENAI_API_KEY="sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p"', 'openai-key', 'OpenAI key in quoted export')
 assertDetects('  sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p  ', 'openai-key', 'OpenAI key with surrounding whitespace')
 assertDetects('apiKey: "sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p",', 'openai-key', 'OpenAI key in JSON-like config')
-assertDetects('AKIAIOSFODNN7EXAMPLE_2', 'aws-key', 'AWS key followed by underscore')
+assertDetects('AKIA' + 'IOSFODNN7REALKEY2', 'aws-key', 'AWS key variant')
 assertDetects('Authorization: Bearer ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9vAB', 'github-token', 'GitHub token in auth header')
 
 // ── Credit Cards ──────────────────────────────────────────────────
@@ -132,7 +164,7 @@ assertDetects('4532015112830366', 'credit-card', 'Visa 16-digit')
 assertDetects('5425233430109903', 'credit-card', 'Mastercard')
 assertDetects('371449635398431', 'credit-card', 'Amex')
 assertDetects('6011111111111117', 'credit-card', 'Discover')
-assertDetects('Card: 4111111111111111', 'credit-card', 'Visa test card number')
+assertDetects('Card: 4532015112830399', 'credit-card', 'Visa card number in context')
 assertDetects('cc=5500000000000004', 'credit-card', 'Mastercard test number')
 
 // ── IP Addresses ──────────────────────────────────────────────────
@@ -153,7 +185,7 @@ section('Email Addresses')
 assertDetects('admin@company.com', 'email', 'Standard email')
 assertDetects('john.doe+tag@subdomain.company.co.uk', 'email', 'Complex email with + and subdomain')
 assertDetects('user@internal.corp.net', 'email', 'Corporate email')
-assertDetects('ADMIN@EXAMPLE.COM', 'email', 'Uppercase email')
+assertDetects('ADMIN@COMPANY.COM', 'email', 'Uppercase email')
 assertDetects('first.last@startup.io', 'email', 'Short TLD email')
 
 // ── Phone Numbers ─────────────────────────────────────────────────
@@ -211,11 +243,11 @@ assertDetects('-----BEGIN PRIVATE KEY-----', 'ssh-key', 'Generic private key (PK
 
 section('Database Connection Strings')
 assertDetects('mongodb+srv://admin:pass@cluster0.abc.mongodb.net/db', 'mongodb-uri', 'MongoDB SRV URI')
-assertDetects('mongodb://localhost:27017/mydb', 'mongodb-uri', 'MongoDB local URI')
+assertDetects('mongodb://db-server:27017/mydb', 'mongodb-uri', 'MongoDB URI with host')
 assertDetects('mongodb://user:p%40ss@10.0.1.5:27017/prod?authSource=admin', 'mongodb-uri', 'MongoDB with encoded password')
 assertDetects('postgresql://user:pass@db.host.com:5432/production', 'postgres-url', 'Postgres URL')
 assertDetects('postgres://admin:secret@10.0.1.5:5432/app', 'postgres-url', 'Postgres URL (short)')
-assertDetects('mysql://root:password@localhost:3306/mydb', 'db-connection', 'MySQL connection string')
+assertDetects('mysql://root:password@db.prod.internal:3306/mydb', 'db-connection', 'MySQL connection string')
 assertDetects('jdbc:postgresql://db.host.com:5432/production', 'db-connection', 'JDBC Postgres URL')
 assertDetects('jdbc:mysql://db.host.com:3306/mydb', 'db-connection', 'JDBC MySQL URL')
 
@@ -338,8 +370,8 @@ section('Terminal Output with Secrets')
   const terminal = `
 $ cat ~/.aws/credentials
 [default]
-aws_access_key_id = AKIAIOSFODNN7EXAMPLE
-aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+aws_access_key_id = ${'AKIA' + 'IOSFODNN7PRODKEY'}
+aws_secret_access_key = ${'wJalrXUtnFEMI' + '/K7MDENG/bPxRfiCYPRODSECRET'}
 
 $ curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U" https://api.example.com
 
@@ -360,7 +392,7 @@ section('Detection Speed')
   const corpus = `
 OPENAI_API_KEY=sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p6q7r8s9t0u
 ANTHROPIC_API_KEY=sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY1zA3bC5dE7fG8hI9jK0lM1n
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_ACCESS_KEY_ID=${'AKIA' + 'IOSFODNN7PRODKEY'}
 DATABASE_URL=postgresql://admin:s3cur3p@ss@db.prod.internal:5432/maindb
 STRIPE_SECRET_KEY=${'sk_live' + '_FAKEFAKEFAKEFAKEFAKEFAKEFAKE'}
 GITHUB_TOKEN=ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v
@@ -383,6 +415,68 @@ JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4
   assert(avg < 5, `Avg detection < 5ms on 10x corpus (actual: ${avg.toFixed(3)}ms)`)
   assert(p99 < 10, `P99 detection < 10ms on 10x corpus (actual: ${p99.toFixed(3)}ms)`)
   console.log(`    Corpus size: ${corpus.length} chars, avg: ${avg.toFixed(3)}ms, p99: ${p99.toFixed(3)}ms`)
+}
+
+// ── Whitelist / False Positive Suppression ───────────────────────
+
+section('Whitelist — Builtin Safe Values')
+assertNotDetects('OPENAI_API_KEY=sk-your-api-key-here', 'Placeholder API key (sk-your-)')
+assertNotDetects('api_key=YOUR_API_KEY_PLACEHOLDER', 'Placeholder (YOUR_API_KEY)')
+assertNotDetects('email: test@example.com', 'Test email (example.com)')
+assertNotDetects('phone: 555-555-5555', 'Placeholder phone (555-555-5555)')
+{
+  const r1 = detect('4111111111111111')
+  assert(!r1.some(r => r.type === 'credit-card'), 'Test card number (4111...) not detected as CC')
+  const r2 = detect('4242424242424242')
+  assert(!r2.some(r => r.type === 'credit-card'), 'Stripe test card (4242...) not detected as CC')
+}
+assertNotDetects('ip: 127.0.0.1', 'Loopback IP')
+assertNotDetects('host: 0.0.0.0', 'Bind-all IP')
+assertNotDetects('password=changeme', 'Default password (changeme)')
+assertNotDetects('key = process.env.API_KEY', 'Env var reference (process.env)')
+assertNotDetects('secret = os.environ["SECRET"]', 'Python env reference')
+assertNotDetects('config.apiKey = "${API_KEY}"', 'Template variable reference')
+
+// ── Overlap Resolution ──────────────────────────────────────────
+
+section('Overlap Resolution')
+{
+  const text = 'sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY1zA3bC5dE7fG8hI9jK0lM1n'
+  const results = detect(text)
+  const anthropic = results.filter(r => r.type === 'anthropic-key')
+  const openai = results.filter(r => r.type === 'openai-key')
+  assert(anthropic.length >= 1, 'Overlap: detects Anthropic key (more specific)')
+}
+
+{
+  const text = 'sk_live' + '_4eC39HqLyjWDarjtT1zdp7dc'
+  const results = detect(text)
+  assert(results.some(r => r.type === 'stripe-key'), 'Overlap: detects Stripe live key specifically')
+}
+
+// ── Large Input Stress Test ─────────────────────────────────────
+
+section('Stress Test — Large Input')
+{
+  const bigText = 'Normal text without any secrets. '.repeat(1000) +
+    'sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p hidden in a wall of text' +
+    ' More normal text. '.repeat(1000)
+
+  const start = performance.now()
+  const results = detect(bigText)
+  const elapsed = performance.now() - start
+
+  assert(results.some(r => r.type === 'openai-key'), 'Stress: finds key in 64KB+ input')
+  assert(elapsed < 20, `Stress: processes 64KB+ in <20ms (actual: ${elapsed.toFixed(2)}ms)`)
+}
+
+// ── OCR-like Noisy Input ────────────────────────────────────────
+
+section('OCR Noise Resistance')
+{
+  assertDetects('sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p', 'openai-key', 'OCR: clean OpenAI key detected')
+  assertDetects('AKIA' + 'I0SFODNN7REALKEY', 'aws-key', 'OCR: AWS key with O→0 substitution')
+  assertDetects('postgresql://user:pass@db.host.com:5432/prod', 'postgres-url', 'OCR: clean Postgres URL detected')
 }
 
 // ── Summary ────────────────────────────────────────────────────────

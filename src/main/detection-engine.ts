@@ -18,6 +18,13 @@ interface Pattern {
   prefixes: string[]
 }
 
+export interface DetectionContext {
+  isEnvFile?: boolean
+  isTerminal?: boolean
+  appName?: string
+  hasMultipleSecrets?: boolean
+}
+
 function extractPrefixes(regex: RegExp): string[] {
   const src = regex.source
   const prefixes: string[] = []
@@ -127,7 +134,50 @@ export class DetectionEngine {
       }
     }
 
-    return results.sort((a, b) => b.confidence - a.confidence)
+    return this.resolveOverlaps(results).sort((a, b) => b.confidence - a.confidence)
+  }
+
+  private resolveOverlaps(results: DetectionResult[]): DetectionResult[] {
+    if (results.length <= 1) return results
+
+    results.sort((a, b) => a.index - b.index || b.length - a.length)
+    const resolved: DetectionResult[] = []
+
+    for (const r of results) {
+      const overlapping = resolved.find(existing =>
+        r.index < existing.index + existing.length && r.index + r.length > existing.index
+      )
+
+      if (!overlapping) {
+        resolved.push(r)
+      } else if (r.confidence > overlapping.confidence || (r.confidence === overlapping.confidence && r.length > overlapping.length)) {
+        const idx = resolved.indexOf(overlapping)
+        resolved[idx] = r
+      }
+    }
+
+    return resolved
+  }
+
+  boostConfidence(results: DetectionResult[], context: DetectionContext): DetectionResult[] {
+    return results.map(r => {
+      let boost = 0
+
+      if (context.isEnvFile) {
+        if (['password', 'env-file', 'api-key'].includes(r.type)) boost += 0.05
+      }
+      if (context.isTerminal) {
+        if (['bearer-token', 'aws-key'].includes(r.type)) boost += 0.03
+      }
+      if (context.appName === 'VS Code' || context.appName === 'Cursor') {
+        if (['password', 'env-file', 'mongodb-uri', 'postgres-url'].includes(r.type)) boost += 0.04
+      }
+      if (context.hasMultipleSecrets && results.length >= 3) {
+        boost += 0.02
+      }
+
+      return { ...r, confidence: Math.min(r.confidence + boost, 1.0) }
+    })
   }
 
   detectFast(text: string): DetectionResult[] {
