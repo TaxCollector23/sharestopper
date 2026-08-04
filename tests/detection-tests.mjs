@@ -1,0 +1,248 @@
+/**
+ * ShareStopper Detection Test Suite
+ *
+ * Verifies that all sensitive data types are correctly detected
+ * and that false positives are minimized.
+ */
+
+const PATTERNS = [
+  { type: 'openai-key', label: 'OpenAI API Key', regex: /sk-[a-zA-Z0-9_-]{20,}/g, confidence: 0.97 },
+  { type: 'anthropic-key', label: 'Anthropic API Key', regex: /sk-ant-[a-zA-Z0-9_-]{20,}/g, confidence: 0.97 },
+  { type: 'google-ai-key', label: 'Google AI Key', regex: /AIza[0-9A-Za-z_-]{35}/g, confidence: 0.95 },
+  { type: 'aws-key', label: 'AWS Access Key', regex: /AKIA[0-9A-Z]{16}/g, confidence: 0.96 },
+  { type: 'github-token', label: 'GitHub Token', regex: /ghp_[a-zA-Z0-9]{36}/g, confidence: 0.97 },
+  { type: 'github-token', label: 'GitHub PAT', regex: /github_pat_[a-zA-Z0-9_]{22,}/g, confidence: 0.97 },
+  { type: 'stripe-key', label: 'Stripe Key', regex: /sk_live_[a-zA-Z0-9]{24,}/g, confidence: 0.97 },
+  { type: 'stripe-key', label: 'Stripe Test Key', regex: /sk_test_[a-zA-Z0-9]{24,}/g, confidence: 0.93 },
+  { type: 'jwt', label: 'JWT Token', regex: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/g, confidence: 0.92 },
+  { type: 'bearer-token', label: 'Bearer Token', regex: /[Bb]earer\s+[a-zA-Z0-9_\-.]{20,}/g, confidence: 0.88 },
+  { type: 'ssh-key', label: 'SSH Private Key', regex: /-----BEGIN (?:OPENSSH |RSA )?PRIVATE KEY-----/g, confidence: 0.99 },
+  { type: 'mongodb-uri', label: 'MongoDB URI', regex: /mongodb(?:\+srv)?:\/\/[^\s"']{10,}/g, confidence: 0.94 },
+  { type: 'postgres-url', label: 'Postgres URL', regex: /postgres(?:ql)?:\/\/[^\s"']{10,}/g, confidence: 0.94 },
+  { type: 'password', label: 'Password', regex: /(?:password|passwd|pwd)\s*[:=]\s*['"]?[^\s'"]{4,}/gi, confidence: 0.82 },
+  { type: 'password', label: 'DB Password', regex: /(?:PASSWORD|DB_PASSWORD)\s*=\s*[^\s]{4,}/g, confidence: 0.90 },
+  { type: 'env-file', label: 'Env Secret', regex: /(?:SECRET|TOKEN|KEY|CREDENTIALS|AUTH)_?[A-Z_]*\s*=\s*['"]?[a-zA-Z0-9_\-/.]{8,}/gi, confidence: 0.78 },
+  { type: 'api-key', label: 'API Key', regex: /(?:api[_-]?key|apikey)\s*[:=]\s*['"]?[a-zA-Z0-9_\-]{16,}/gi, confidence: 0.85 },
+  { type: 'credit-card', label: 'Credit Card', regex: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b/g, confidence: 0.90 },
+  { type: 'email', label: 'Email Address', regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, confidence: 0.75 },
+  { type: 'phone', label: 'Phone Number', regex: /(?:\+1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, confidence: 0.70 },
+  { type: 'ipv4', label: 'IPv4 Address', regex: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g, confidence: 0.65 },
+  { type: 'private-ip', label: 'Private IP', regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g, confidence: 0.80 },
+  { type: 'slack-webhook', label: 'Slack Webhook', regex: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[a-zA-Z0-9]+/g, confidence: 0.97 },
+  { type: 'discord-webhook', label: 'Discord Webhook', regex: /https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/[a-zA-Z0-9_-]+/g, confidence: 0.97 },
+  { type: 'oauth-secret', label: 'OAuth Secret', regex: /(?:client[_-]?secret|oauth[_-]?secret)\s*[:=]\s*['"]?[a-zA-Z0-9_\-]{16,}/gi, confidence: 0.88 },
+]
+
+function detect(text) {
+  const results = []
+  const seen = new Set()
+  for (const pattern of PATTERNS) {
+    pattern.regex.lastIndex = 0
+    let match
+    while ((match = pattern.regex.exec(text)) !== null) {
+      const key = `${pattern.type}:${match[0]}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        results.push({ type: pattern.type, label: pattern.label, value: match[0] })
+      }
+    }
+  }
+  return results
+}
+
+// ── Test framework ─────────────────────────────────────────────────
+
+let passed = 0
+let failed = 0
+let total = 0
+
+function assert(condition, message) {
+  total++
+  if (condition) {
+    passed++
+    console.log(`  ✓ ${message}`)
+  } else {
+    failed++
+    console.log(`  ✗ ${message}`)
+  }
+}
+
+function assertDetects(text, expectedType, description) {
+  const results = detect(text)
+  const found = results.some(r => r.type === expectedType)
+  assert(found, description || `Detects ${expectedType} in: ${text.slice(0, 60)}...`)
+}
+
+function assertNotDetects(text, description) {
+  const results = detect(text)
+  assert(results.length === 0, description || `No false positive in: ${text.slice(0, 60)}...`)
+}
+
+function assertDetectCount(text, expectedCount, description) {
+  const results = detect(text)
+  assert(results.length === expectedCount, `${description} (found ${results.length}, expected ${expectedCount})`)
+}
+
+function section(name) {
+  console.log('')
+  console.log(`── ${name} ──`)
+  console.log('')
+}
+
+// ── Tests ──────────────────────────────────────────────────────────
+
+console.log('')
+console.log('ShareStopper Detection Test Suite')
+console.log('═'.repeat(50))
+
+section('API Keys')
+assertDetects('sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p', 'openai-key', 'OpenAI key (sk-proj-...)')
+assertDetects('sk-aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789', 'openai-key', 'OpenAI key (sk-...)')
+assertDetects('sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY1zA', 'anthropic-key', 'Anthropic key')
+assertDetects('AIzaSyBkD3E4fG5hI6jK7lM8nO9pQ0rS1tU2vW3x', 'google-ai-key', 'Google AI key')
+assertDetects('AKIAIOSFODNN7EXAMPLE', 'aws-key', 'AWS access key')
+assertDetects('ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9vAB', 'github-token', 'GitHub PAT (ghp_)')
+assertDetects('github_pat_11AABBBCC_abcdefghijklmnopqrstuvwxyz', 'github-token', 'GitHub fine-grained PAT')
+assertDetects('sk_live' + '_FAKEFAKEFAKEFAKEFAKEFAKEFAKE', 'stripe-key', 'Stripe live key')
+assertDetects('sk_test' + '_FAKEFAKEFAKEFAKEFAKEFAKEFAKE', 'stripe-key', 'Stripe test key')
+
+section('Credit Cards')
+assertDetects('4532015112830366', 'credit-card', 'Visa 16-digit')
+assertDetects('5425233430109903', 'credit-card', 'Mastercard')
+assertDetects('371449635398431', 'credit-card', 'Amex')
+assertDetects('6011111111111117', 'credit-card', 'Discover')
+
+section('IP Addresses')
+assertDetects('192.168.1.105', 'private-ip', 'Private IP (192.168.x.x)')
+assertDetects('10.0.1.55', 'private-ip', 'Private IP (10.x.x.x)')
+assertDetects('172.16.0.1', 'private-ip', 'Private IP (172.16.x.x)')
+assertDetects('203.0.113.42', 'ipv4', 'Public IPv4')
+assertDetects('8.8.8.8', 'ipv4', 'Google DNS IPv4')
+
+section('Email Addresses')
+assertDetects('admin@company.com', 'email', 'Standard email')
+assertDetects('john.doe+tag@subdomain.company.co.uk', 'email', 'Complex email with + and subdomain')
+assertDetects('user@internal.corp.net', 'email', 'Corporate email')
+
+section('Phone Numbers')
+assertDetects('(415) 555-0198', 'phone', 'US phone with parens')
+assertDetects('415-555-0198', 'phone', 'US phone with dashes')
+assertDetects('+1-212-555-0147', 'phone', 'US phone with country code')
+assertDetects('415.555.0198', 'phone', 'US phone with dots')
+
+section('Passwords & Secrets')
+assertDetects('password=super_secret_123', 'password', 'password= format')
+assertDetects('DB_PASSWORD=r00t_admin_2024', 'password', 'DB_PASSWORD= format')
+assertDetects('pwd: mysecretpass', 'password', 'pwd: format')
+assertDetects('SECRET_KEY=a8f2c4d6e8g0i2k4', 'env-file', 'SECRET_KEY env var')
+assertDetects('AUTH_TOKEN=abcdefgh12345678', 'env-file', 'AUTH_TOKEN env var')
+assertDetects('client_secret=dG9wX3NlY3JldF9mb3Jfb2F1', 'oauth-secret', 'OAuth client_secret')
+assertDetects('api_key=abcdefghijklmnopqrstuvwx', 'api-key', 'Generic API key')
+
+section('JWT / Bearer Tokens')
+assertDetects(
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U',
+  'jwt', 'JWT token'
+)
+assertDetects('Bearer ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v', 'bearer-token', 'Bearer token')
+assertDetects('bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9', 'bearer-token', 'Lowercase bearer')
+
+section('SSH / RSA Keys')
+assertDetects('-----BEGIN OPENSSH PRIVATE KEY-----', 'ssh-key', 'OpenSSH private key')
+assertDetects('-----BEGIN RSA PRIVATE KEY-----', 'ssh-key', 'RSA private key')
+assertDetects('-----BEGIN PRIVATE KEY-----', 'ssh-key', 'Generic private key')
+
+section('Database Connection Strings')
+assertDetects('mongodb+srv://admin:pass@cluster0.abc.mongodb.net/db', 'mongodb-uri', 'MongoDB SRV URI')
+assertDetects('mongodb://localhost:27017/mydb', 'mongodb-uri', 'MongoDB local URI')
+assertDetects('postgresql://user:pass@db.host.com:5432/production', 'postgres-url', 'Postgres URL')
+assertDetects('postgres://admin:secret@10.0.1.5:5432/app', 'postgres-url', 'Postgres URL (short)')
+
+section('Webhooks')
+assertDetects(
+  'https://hooks.slack.com/services/T01234567/B89ABCDEF/xYz123AbC456DeF789GhI',
+  'slack-webhook', 'Slack webhook'
+)
+assertDetects(
+  'https://discord.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz1234567890ABCDEF',
+  'discord-webhook', 'Discord webhook'
+)
+assertDetects(
+  'https://discordapp.com/api/webhooks/9876543210/ABCDEF1234567890abcdefghijklmnop',
+  'discord-webhook', 'Discord webhook (discordapp.com)'
+)
+
+section('False Positive Resistance')
+assertNotDetects('Hello world, this is a normal sentence.', 'Normal text')
+assertNotDetects('The meeting is at 3pm in room 204.', 'Meeting text')
+assertNotDetects('Please review PR #142 and merge if approved.', 'PR review text')
+assertNotDetects('function calculateTotal(items) { return items.reduce((a, b) => a + b, 0) }', 'JavaScript code')
+assertNotDetects('import React from "react"', 'React import')
+assertNotDetects('npm install --save-dev typescript', 'npm command')
+assertNotDetects('git push origin main', 'Git command')
+assertNotDetects('The server responded with status 200 OK', 'HTTP status')
+
+section('Mixed Content (realistic screen)')
+{
+  const mixed = `
+  // config.ts
+  export const config = {
+    apiKey: "sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p",
+    dbUrl: "postgresql://user:pass123@db.company.com:5432/prod",
+    adminEmail: "admin@company.com",
+  }
+  // Server at 192.168.1.100
+  // Card on file: 4532015112830366
+  `
+  const results = detect(mixed)
+  assert(results.length >= 4, `Mixed content: detects multiple types (found ${results.length})`)
+  assert(results.some(r => r.type === 'openai-key'), 'Mixed content: finds OpenAI key')
+  assert(results.some(r => r.type === 'postgres-url'), 'Mixed content: finds Postgres URL')
+  assert(results.some(r => r.type === 'email'), 'Mixed content: finds email')
+  assert(results.some(r => r.type === 'credit-card'), 'Mixed content: finds credit card')
+  assert(results.some(r => r.type === 'private-ip'), 'Mixed content: finds private IP')
+}
+
+section('Detection Speed')
+{
+  const corpus = `
+OPENAI_API_KEY=sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p6q7r8s9t0u
+ANTHROPIC_API_KEY=sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY1zA3bC5dE7fG8hI9jK0lM1n
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+DATABASE_URL=postgresql://admin:s3cur3p@ss@db.prod.internal:5432/maindb
+STRIPE_SECRET_KEY=${'sk_live' + '_FAKEFAKEFAKEFAKEFAKEFAKEFAKE'}
+GITHUB_TOKEN=ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v
+Contact: admin@company.io, (415) 555-0198
+CC: 4532015112830366, IP: 192.168.1.105
+JWT: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U
+  `.repeat(10)
+
+  const iterations = 100
+  const times = []
+  for (let i = 0; i < iterations; i++) {
+    const start = performance.now()
+    detect(corpus)
+    times.push(performance.now() - start)
+  }
+  times.sort((a, b) => a - b)
+  const avg = times.reduce((a, b) => a + b, 0) / times.length
+  const p99 = times[Math.floor(times.length * 0.99)]
+
+  assert(avg < 5, `Avg detection < 5ms on 10x corpus (actual: ${avg.toFixed(3)}ms)`)
+  assert(p99 < 10, `P99 detection < 10ms on 10x corpus (actual: ${p99.toFixed(3)}ms)`)
+  console.log(`    Corpus size: ${corpus.length} chars, avg: ${avg.toFixed(3)}ms, p99: ${p99.toFixed(3)}ms`)
+}
+
+// ── Summary ────────────────────────────────────────────────────────
+
+console.log('')
+console.log('═'.repeat(50))
+console.log(`  ${passed} passed, ${failed} failed, ${total} total`)
+if (failed > 0) {
+  console.log('  ✗ SOME TESTS FAILED')
+  process.exit(1)
+} else {
+  console.log('  ✓ ALL TESTS PASSED')
+}
+console.log('═'.repeat(50))
+console.log('')

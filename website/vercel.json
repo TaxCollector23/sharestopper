@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/benchmarks", "destination": "/benchmarks.html" },
+    { "source": "/docs", "destination": "/docs.html" }
+  ],
+  "headers": [
+    {
+      "source": "/install.sh",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
+    }
+  ]
+}

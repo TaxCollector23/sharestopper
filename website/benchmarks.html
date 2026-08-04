@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Benchmarks — ShareStopper</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <a href="/" class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ShareStopper
+    </a>
+    <div class="links">
+      <a href="/docs">Docs</a>
+      <a href="/benchmarks" class="active">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="wrap">
+    <h1>Benchmarks</h1>
+    <p>Measured on Apple Silicon. 61 of 61 tests passing across all detection categories.</p>
+  </div>
+</div>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Pipeline</div>
+      <h2>End-to-end latency</h2>
+    </div>
+
+    <div class="pipeline-row">
+      <div class="pipe-stage"><div class="pl">Screen Capture</div><div class="pv" style="color:var(--amber)">~200ms</div><div class="pn">macOS screencapture</div></div>
+      <div class="pipe-stage"><div class="pl">OCR</div><div class="pv" style="color:var(--amber)">~400ms</div><div class="pn">Tesseract.js</div></div>
+      <div class="pipe-stage"><div class="pl">Pattern Detection</div><div class="pv" style="color:var(--green)">0.11ms</div><div class="pn">26 regex patterns</div></div>
+      <div class="pipe-stage"><div class="pl">Overlay Render</div><div class="pv" style="color:var(--green)">&lt;1ms</div><div class="pn">Browser overlay</div></div>
+    </div>
+    <p class="note"><strong>~600ms end-to-end</strong> from pixel to overlay. With frame differencing, effective throughput reaches 2–3 fps — sensitive data is hidden before a viewer can read it.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Per-type</div>
+      <h2>Detection latency by category</h2>
+    </div>
+
+    <div style="overflow-x:auto;border-radius:10px">
+    <table class="bench-table">
+      <thead><tr><th>Category</th><th>Type</th><th class="r">Avg (ms)</th><th class="r">Median</th><th class="r">P95</th><th class="r">P99</th><th></th></tr></thead>
+      <tbody>
+        <tr><td class="type">API Key</td><td>OpenAI</td><td class="r">0.008</td><td class="r">0.007</td><td class="r">0.009</td><td class="r">0.014</td><td><span class="bar" style="width:8px"></span></td></tr>
+        <tr><td class="type">API Key</td><td>Anthropic</td><td class="r">0.009</td><td class="r">0.008</td><td class="r">0.009</td><td class="r">0.010</td><td><span class="bar" style="width:9px"></span></td></tr>
+        <tr><td class="type">API Key</td><td>AWS</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.003</td><td><span class="bar" style="width:3px"></span></td></tr>
+        <tr><td class="type">API Key</td><td>GitHub</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.004</td><td><span class="bar" style="width:4px"></span></td></tr>
+        <tr><td class="type">API Key</td><td>Stripe</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.005</td><td><span class="bar" style="width:4px"></span></td></tr>
+        <tr><td class="type">API Key</td><td>Google AI</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.005</td><td><span class="bar" style="width:4px"></span></td></tr>
+        <tr><td class="type">Credit Card</td><td>Visa / MC / Amex</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">IP Address</td><td>IPv4 / Private</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">Email</td><td>Standard</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">Phone</td><td>US formats</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td class="r">0.001</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">Password</td><td>ENV / DB / inline</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.002</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">JWT</td><td>Full token</td><td class="r">0.040</td><td class="r">0.039</td><td class="r">0.042</td><td class="r">0.050</td><td><span class="bar med" style="width:40px"></span></td></tr>
+        <tr><td class="type">SSH Key</td><td>Private key header</td><td class="r">0.003</td><td class="r">0.002</td><td class="r">0.003</td><td class="r">0.003</td><td><span class="bar" style="width:3px"></span></td></tr>
+        <tr><td class="type">Database</td><td>MongoDB / Postgres</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.002</td><td class="r">0.002</td><td><span class="bar" style="width:2px"></span></td></tr>
+        <tr><td class="type">Webhook</td><td>Slack / Discord</td><td class="r">0.004</td><td class="r">0.004</td><td class="r">0.005</td><td class="r">0.005</td><td><span class="bar" style="width:4px"></span></td></tr>
+        <tr><td class="type">OAuth</td><td>Client secret</td><td class="r">0.003</td><td class="r">0.003</td><td class="r">0.003</td><td class="r">0.004</td><td><span class="bar" style="width:3px"></span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:10px">All times in milliseconds, 1000 iterations each. JWT is the slowest single-type pattern at 0.04ms due to three-segment base64 matching — still imperceptible.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Scaling</div>
+      <h2>Detection vs input size</h2>
+      <p>Linear scaling. A typical screen yields 1–4K chars of OCR text — well under 0.2ms.</p>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 24px">
+      <div class="scale-bar-row"><span class="scale-label">1.8K</span><div class="scale-track"><div class="scale-fill" style="width:2%"></div></div><span class="scale-ms">0.11ms</span></div>
+      <div class="scale-bar-row"><span class="scale-label">3.5K</span><div class="scale-track"><div class="scale-fill" style="width:4%"></div></div><span class="scale-ms">0.23ms</span></div>
+      <div class="scale-bar-row"><span class="scale-label">8.8K</span><div class="scale-track"><div class="scale-fill" style="width:10%"></div></div><span class="scale-ms">0.59ms</span></div>
+      <div class="scale-bar-row"><span class="scale-label">17.6K</span><div class="scale-track"><div class="scale-fill" style="width:22%"></div></div><span class="scale-ms">1.26ms</span></div>
+      <div class="scale-bar-row"><span class="scale-label">35.2K</span><div class="scale-track"><div class="scale-fill med" style="width:40%"></div></div><span class="scale-ms">2.27ms</span></div>
+      <div class="scale-bar-row"><span class="scale-label">87.9K</span><div class="scale-track"><div class="scale-fill med" style="width:100%"></div></div><span class="scale-ms">5.74ms</span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="left">ShareStopper</div>
+    <div class="right">
+      <a href="/docs">Docs</a>
+      <a href="/benchmarks">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

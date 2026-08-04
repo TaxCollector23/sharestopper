@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShareStopper — Privacy firewall for screen sharing</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <a href="/" class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ShareStopper
+    </a>
+    <div class="links">
+      <a href="/docs">Docs</a>
+      <a href="/benchmarks">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="wrap">
+    <h1>Stop leaking secrets<br>on <span class="accent">screen share</span></h1>
+    <p>ShareStopper watches your screen during Zoom, Meet, Teams, Discord, and Slack calls. When it spots an API key, password, credit card, or any sensitive data — it hides it before anyone else can see it.</p>
+
+    <div class="install-block" style="max-width:560px;margin:36px auto 0">
+      <div class="install-header">
+        <div class="circles"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+        <span class="title">Terminal</span>
+      </div>
+      <div class="install-body">
+        <div class="comment"># Install ShareStopper</div>
+        <div class="cmd"><span class="hl">curl -fsSL</span> https://sharestopper.dev/install.sh <span class="hl">|</span> bash</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- What it does -->
+<section>
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">What it does</div>
+      <h2>Real-time privacy protection that runs locally</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <strong>Activates automatically</strong>
+        <span>Detects when Zoom, Google Meet, Teams, Discord, or Slack begins sharing your screen. No manual toggle — it just works.</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <strong>29 data types detected</strong>
+        <span>API keys (OpenAI, AWS, GitHub, Stripe), passwords, credit cards, JWTs, SSH keys, database URIs, emails, IPs, webhooks, and more.</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <strong>Sub-millisecond detection</strong>
+        <span>Pattern matching takes 0.11ms. Full pipeline — capture, OCR, detect, overlay — runs under 600ms. Sensitive data is hidden before a viewer can read it.</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </div>
+        <strong>Runs on localhost</strong>
+        <span>Everything stays on your machine. No cloud, no telemetry, no data leaves your network. The dashboard runs at localhost:1011.</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <strong>Live dashboard</strong>
+        <span>See every detection in real time — what was caught, which app it came from, confidence level, and timing. Edit detection rules and profiles from the browser.</span>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </div>
+        <strong>Open source</strong>
+        <span>MIT licensed. Every regex pattern, every detection rule — fully inspectable and customizable. Add your own patterns or adjust sensitivity.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Pipeline</div>
+      <h2>How it works</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="num">01</div><div><strong>Screen sharing detected</strong><span>Monitors Zoom, Google Meet, Teams, Discord, and Slack for active screen sharing using macOS system APIs and process inspection.</span></div></div>
+      <div class="step"><div class="num">02</div><div><strong>Screen captured</strong><span>Captures the current display at native resolution. Frame differencing means only changed regions get re-scanned.</span></div></div>
+      <div class="step"><div class="num">03</div><div><strong>Text extracted via OCR</strong><span>Tesseract.js extracts all visible text with word-level bounding boxes for precise overlay positioning.</span></div></div>
+      <div class="step"><div class="num">04</div><div><strong>Pattern matching in 0.1ms</strong><span>26 compiled regex patterns run against extracted text — API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks.</span></div></div>
+      <div class="step"><div class="num">05</div><div><strong>Overlay rendered</strong><span>Block, blur, or pixelate overlays appear over matched regions. Invisible to your workflow, opaque to viewers on the call.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- What it catches -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Coverage</div>
+      <h2>What it catches</h2>
+      <p>Every pattern is tested against real-world formats with 61 tests passing. Zero false positives on normal code and conversation.</p>
+    </div>
+    <div class="detect-grid">
+      <div class="detect-item"><span class="dot" style="background:#34d399"></span>OpenAI API Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#f97316"></span>Anthropic API Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#60a5fa"></span>Google AI Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#f59e0b"></span>AWS Access Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#a855f7"></span>GitHub Tokens</div>
+      <div class="detect-item"><span class="dot" style="background:#8b5cf6"></span>Stripe Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#f43f5e"></span>Credit Card Numbers</div>
+      <div class="detect-item"><span class="dot" style="background:#ef4444"></span>Passwords</div>
+      <div class="detect-item"><span class="dot" style="background:#06b6d4"></span>JWT Tokens</div>
+      <div class="detect-item"><span class="dot" style="background:#dc2626"></span>SSH / RSA Keys</div>
+      <div class="detect-item"><span class="dot" style="background:#22c55e"></span>MongoDB URIs</div>
+      <div class="detect-item"><span class="dot" style="background:#60a5fa"></span>Postgres URLs</div>
+      <div class="detect-item"><span class="dot" style="background:#0ea5e9"></span>Email Addresses</div>
+      <div class="detect-item"><span class="dot" style="background:#14b8a6"></span>Phone Numbers</div>
+      <div class="detect-item"><span class="dot" style="background:#eab308"></span>IPv4 / Private IPs</div>
+      <div class="detect-item"><span class="dot" style="background:#a78bfa"></span>Slack Webhooks</div>
+      <div class="detect-item"><span class="dot" style="background:#818cf8"></span>Discord Webhooks</div>
+      <div class="detect-item"><span class="dot" style="background:#f59e0b"></span>OAuth Secrets</div>
+      <div class="detect-item"><span class="dot" style="background:#d97706"></span>Environment Variables</div>
+      <div class="detect-item"><span class="dot" style="background:#ef4444"></span>Twilio Credentials</div>
+      <div class="detect-item"><span class="dot" style="background:#fb923c"></span>Firebase Config</div>
+      <div class="detect-item"><span class="dot" style="background:#22c55e"></span>Supabase URLs</div>
+      <div class="detect-item"><span class="dot" style="background:#06b6d4"></span>Bearer Tokens</div>
+      <div class="detect-item"><span class="dot" style="background:#d97706"></span>Session Cookies</div>
+    </div>
+  </div>
+</section>
+
+<!-- Supported apps -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Integrations</div>
+      <h2>Works with the tools you already use</h2>
+    </div>
+    <div class="apps-row">
+      <div class="app-item"><div class="name">Zoom</div><div class="method">Process + window detection</div></div>
+      <div class="app-item"><div class="name">Google Meet</div><div class="method">Chrome tab monitoring</div></div>
+      <div class="app-item"><div class="name">Teams</div><div class="method">Window title inspection</div></div>
+      <div class="app-item"><div class="name">Discord</div><div class="method">Go Live detection</div></div>
+      <div class="app-item"><div class="name">Slack</div><div class="method">Huddle monitoring</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="left">ShareStopper</div>
+    <div class="right">
+      <a href="/docs">Docs</a>
+      <a href="/benchmarks">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

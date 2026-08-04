@@ -1,0 +1,41 @@
+{
+  "name": "sharestopper",
+  "version": "1.0.0",
+  "description": "AI-powered privacy firewall for screen sharing",
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && electron-builder",
+    "preview": "vite preview",
+    "start": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "benchmark": "node benchmarks/detection-benchmark.mjs",
+    "test": "node tests/detection-tests.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "vite-plugin-electron": "^0.28.0",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "framer-motion": "^10.18.0",
+    "lucide-react": "^0.303.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tesseract.js": "^5.0.4"
+  }
+}

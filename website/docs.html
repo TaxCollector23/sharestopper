@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docs — ShareStopper</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<nav>
+  <div class="inner">
+    <a href="/" class="logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ShareStopper
+    </a>
+    <div class="links">
+      <a href="/docs" class="active">Docs</a>
+      <a href="/benchmarks">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <div class="wrap">
+    <h1>Documentation</h1>
+    <p>Install, configure, and use ShareStopper.</p>
+  </div>
+</div>
+
+<section style="padding-top:0">
+  <div class="wrap docs-content">
+
+    <h3>Install</h3>
+    <p>ShareStopper requires macOS and Node.js 18+. Install with one command:</p>
+    <pre>curl -fsSL https://sharestopper.dev/install.sh | bash</pre>
+    <p>This installs to <code>~/.sharestopper</code>, starts the watcher on <code>localhost:1011</code>, and configures it to auto-start on login via launchd.</p>
+
+    <h3>Dashboard</h3>
+    <p>Once running, open <code>http://localhost:1011</code> in your browser. The dashboard shows:</p>
+    <ul>
+      <li>Live detection feed — every match as it happens, with type, source app, confidence, and timing</li>
+      <li>Protection status — whether screen sharing is active and which app triggered it</li>
+      <li>Detection rules — toggle individual patterns on/off, adjust sensitivity</li>
+      <li>Profiles — switch between developer, business, student, and streamer presets</li>
+      <li>Analytics — detection counts by type, timeline of activity, false positive rate</li>
+    </ul>
+
+    <h3>How detection works</h3>
+    <p>ShareStopper monitors for screen sharing sessions across Zoom, Google Meet, Teams, Discord, and Slack. When sharing is detected:</p>
+    <ul>
+      <li>The current screen is captured using macOS <code>screencapture</code></li>
+      <li>Tesseract.js extracts text with word-level bounding boxes</li>
+      <li>26 regex patterns scan for sensitive data (API keys, passwords, credit cards, etc.)</li>
+      <li>Overlays are rendered over matched regions — block, blur, or pixelate</li>
+    </ul>
+    <p>The full pipeline runs in under 600ms. Pattern detection alone takes 0.11ms. See <a href="/benchmarks" style="color:var(--green)">benchmarks</a> for detailed numbers.</p>
+
+    <h3>Supported data types</h3>
+    <p>29 types across these categories:</p>
+    <ul>
+      <li><strong>API keys</strong> — OpenAI, Anthropic, Google AI, AWS, GitHub, Stripe, Twilio, Firebase, Supabase</li>
+      <li><strong>Credentials</strong> — passwords, OAuth client secrets, bearer tokens, session cookies, environment variables</li>
+      <li><strong>Tokens</strong> — JWTs, SSH/RSA private keys</li>
+      <li><strong>Financial</strong> — credit card numbers (Visa, Mastercard, Amex)</li>
+      <li><strong>PII</strong> — email addresses, phone numbers, IPv4/private IP addresses</li>
+      <li><strong>Infrastructure</strong> — MongoDB URIs, Postgres connection strings, Slack webhooks, Discord webhooks</li>
+    </ul>
+
+    <h3>Screen sharing detection</h3>
+    <p>Each app is detected differently:</p>
+    <ul>
+      <li><strong>Zoom</strong> — checks for CptHost and ZoomShareToolbar processes, plus window title matching</li>
+      <li><strong>Google Meet</strong> — monitors Chrome window titles and macOS screen recording indicator</li>
+      <li><strong>Teams</strong> — window title inspection for sharing state</li>
+      <li><strong>Discord</strong> — Go Live process and window detection</li>
+      <li><strong>Slack</strong> — huddle sharing state via window monitoring</li>
+    </ul>
+
+    <h3>Configuration</h3>
+    <p>Edit settings from the dashboard or modify <code>~/.sharestopper/config.json</code> directly:</p>
+    <pre>{
+  "port": 1011,
+  "overlayStyle": "block",
+  "profile": "developer",
+  "autoStart": true,
+  "notifications": true,
+  "patterns": {
+    "openai-key": true,
+    "credit-card": true,
+    "password": true
+  }
+}</pre>
+
+    <h3>CLI usage</h3>
+    <pre># Start the watcher
+sharestopper
+
+# Run on a custom port
+sharestopper --port 8080
+
+# Run benchmarks
+sharestopper benchmark
+
+# Run detection tests
+sharestopper test</pre>
+
+    <h3>Uninstall</h3>
+    <pre>launchctl unload ~/Library/LaunchAgents/com.sharestopper.app.plist
+rm -rf ~/.sharestopper
+rm -f /usr/local/bin/sharestopper</pre>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:center">
+    <div class="left">ShareStopper</div>
+    <div class="right">
+      <a href="/docs">Docs</a>
+      <a href="/benchmarks">Benchmarks</a>
+      <a href="https://github.com/sharestopper/sharestopper">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sharestopper-dev",
+      "runtimeExecutable": "/Users/rangan/Desktop/sharestopper/node_modules/.bin/vite",
+      "runtimeArgs": ["--host"],
+      "port": 5173
+    }
+  ]
+}
