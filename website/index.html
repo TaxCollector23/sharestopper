@@ -40,8 +40,33 @@
   </div>
 </section>
 
-<!-- How it works — dense, no cards -->
+<!-- Live demo -->
 <section>
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Live demo</div>
+      <h2>See it in action</h2>
+      <p>This is what ShareStopper sees on your screen. Secrets are detected and covered in real-time.</p>
+    </div>
+    <div class="demo-container">
+      <div class="demo-chrome">
+        <div class="demo-bar">
+          <div class="circles"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+          <span class="demo-filename">.env — VS Code</span>
+          <div class="demo-status" id="demo-status">
+            <span class="demo-dot"></span>
+            <span id="demo-status-text">Watching...</span>
+          </div>
+        </div>
+        <div class="demo-editor" id="demo-editor"></div>
+      </div>
+      <div class="demo-feed" id="demo-feed"></div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
       <div class="label">How it works</div>
@@ -76,7 +101,7 @@
         <div class="pipe-num">4</div>
         <div class="pipe-info">
           <strong>Patterns matched</strong>
-          <p>26 compiled regex patterns scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, and more. <a href="/benchmarks">See benchmarks.</a></p>
+          <p>27 compiled regex patterns scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, and more. <a href="/benchmarks">See benchmarks.</a></p>
         </div>
         <div class="pipe-time">0.11ms</div>
       </div>
@@ -92,19 +117,19 @@
   </div>
 </section>
 
-<!-- What it catches — inline list, not a grid of cards -->
+<!-- What it catches -->
 <section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
       <div class="label">Coverage</div>
       <h2>29 sensitive data types</h2>
-      <p>Every pattern tested against real-world formats. 61 tests passing. Zero false positives on normal code and conversation.</p>
+      <p>Every pattern tested against real-world formats. 114 tests passing. Zero false positives on normal code and conversation.</p>
     </div>
     <div class="type-list">
       <div class="type-group">
         <h4>Credentials</h4>
         <ul>
-          <li>API keys <span class="dim">(provider-agnostic + specific formats)</span></li>
+          <li>API keys <span class="dim">(OpenAI, Anthropic, AWS, GitHub, Stripe, Google)</span></li>
           <li>Secret keys &amp; access tokens</li>
           <li>Passwords <span class="dim">(env vars, inline, DB connection strings)</span></li>
           <li>OAuth client secrets</li>
@@ -118,14 +143,14 @@
         <ul>
           <li>JWT tokens <span class="dim">(three-segment base64)</span></li>
           <li>SSH / RSA private key headers</li>
-          <li>Webhook URLs</li>
-          <li>Service credentials</li>
+          <li>Webhook URLs <span class="dim">(Slack, Discord)</span></li>
+          <li>Twilio credentials</li>
         </ul>
       </div>
       <div class="type-group">
         <h4>Financial &amp; PII</h4>
         <ul>
-          <li>Credit card numbers <span class="dim">(Visa, Mastercard, Amex)</span></li>
+          <li>Credit card numbers <span class="dim">(Visa, Mastercard, Amex, Discover)</span></li>
           <li>Email addresses</li>
           <li>Phone numbers <span class="dim">(US, international)</span></li>
           <li>IPv4 addresses <span class="dim">(public + private ranges)</span></li>
@@ -134,16 +159,16 @@
       <div class="type-group">
         <h4>Infrastructure</h4>
         <ul>
-          <li>Database URIs <span class="dim">(MongoDB, Postgres)</span></li>
-          <li>Connection strings</li>
-          <li>Webhook URLs</li>
+          <li>Database URIs <span class="dim">(MongoDB, Postgres, MySQL)</span></li>
+          <li>JDBC connection strings</li>
+          <li>Firebase &amp; Supabase configs</li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Supported apps — simple inline -->
+<!-- Supported apps -->
 <section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
@@ -161,7 +186,7 @@
   </div>
 </section>
 
-<!-- What you get -->
+<!-- Dashboard -->
 <section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
@@ -216,6 +241,125 @@ document.querySelectorAll('.pipe-step').forEach(el => {
     el.classList.toggle('expanded');
   });
 });
+
+// ── Interactive demo ──────────────────────────────────────────────
+
+(function() {
+  const DEMO_LINES = [
+    { text: '# Production Environment', type: null },
+    { text: 'NODE_ENV=production', type: null },
+    { text: 'PORT=3000', type: null },
+    { text: '', type: null },
+    { text: '# API Keys', type: null },
+    { text: 'OPENAI_API_KEY=sk-proj-4f8a9c2b1e3d5f7g8h9j0k1l2m3n4o5p', type: 'api-key', label: 'OpenAI API Key', color: '#ef4444', start: 15, end: 55 },
+    { text: 'ANTHROPIC_API_KEY=sk-ant-api03-7jK9mN2pQ4rS6tU8vW0xY', type: 'api-key', label: 'Anthropic Key', color: '#ef4444', start: 18, end: 52 },
+    { text: 'AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE', type: 'api-key', label: 'AWS Access Key', color: '#f59e0b', start: 18, end: 38 },
+    { text: 'STRIPE_SECRET=' + 'sk_live' + '_4eC39HqLyjWDarjtT1zdp7dc', type: 'api-key', label: 'Stripe Secret', color: '#ef4444', start: 14, end: 46 },
+    { text: '', type: null },
+    { text: '# Database', type: null },
+    { text: 'DATABASE_URL=postgresql://admin:s3cur3@db.prod:5432/main', type: 'database', label: 'Database URL', color: '#a78bfa', start: 13, end: 55 },
+    { text: 'REDIS_PASSWORD=r3d1s_cl0ud_t0k3n_2024', type: 'password', label: 'Password', color: '#f59e0b', start: 15, end: 38 },
+    { text: '', type: null },
+    { text: '# Services', type: null },
+    { text: 'GITHUB_TOKEN=ghp_xK9mT4qR8sN2pL5jH7gF3dC1bA0zY6wX9v', type: 'token', label: 'GitHub Token', color: '#ef4444', start: 13, end: 49 },
+    { text: 'SLACK_WEBHOOK=https://hooks.slack.com/services/T01/B89/xYz', type: 'webhook', label: 'Slack Webhook', color: '#60a5fa', start: 14, end: 57 },
+    { text: '', type: null },
+    { text: '# Contact', type: null },
+    { text: 'ADMIN_EMAIL=admin@company.com', type: 'pii', label: 'Email Address', color: '#34d399', start: 12, end: 28 },
+    { text: 'SUPPORT_PHONE=(415) 555-0198', type: 'pii', label: 'Phone Number', color: '#34d399', start: 14, end: 28 },
+    { text: 'BILLING_CC=4532015112830366', type: 'financial', label: 'Credit Card', color: '#f59e0b', start: 11, end: 27 },
+  ];
+
+  const editor = document.getElementById('demo-editor');
+  const feed = document.getElementById('demo-feed');
+  const statusText = document.getElementById('demo-status-text');
+  const statusDot = document.querySelector('.demo-dot');
+
+  let lineIndex = 0;
+  let detections = 0;
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function addLine() {
+    if (lineIndex >= DEMO_LINES.length) {
+      statusText.textContent = detections + ' secrets blocked';
+      statusDot.style.background = '#34d399';
+      return;
+    }
+
+    const line = DEMO_LINES[lineIndex];
+    const lineEl = document.createElement('div');
+    lineEl.className = 'demo-line';
+
+    const numEl = document.createElement('span');
+    numEl.className = 'demo-ln';
+    numEl.textContent = (lineIndex + 1).toString().padStart(2);
+
+    const codeEl = document.createElement('span');
+    codeEl.className = 'demo-code';
+
+    if (line.type) {
+      const before = escapeHtml(line.text.slice(0, line.start));
+      const secret = escapeHtml(line.text.slice(line.start, line.end));
+      const after = escapeHtml(line.text.slice(line.end));
+      codeEl.innerHTML = before + '<span class="demo-secret" style="--c:' + line.color + '">' + secret + '<span class="demo-block" style="background:' + line.color + '"></span></span>' + after;
+
+      lineEl.appendChild(numEl);
+      lineEl.appendChild(codeEl);
+      editor.appendChild(lineEl);
+      editor.scrollTop = editor.scrollHeight;
+
+      // Animate the detection after a brief delay
+      setTimeout(() => {
+        const secretEl = lineEl.querySelector('.demo-secret');
+        const blockEl = lineEl.querySelector('.demo-block');
+        if (secretEl && blockEl) {
+          secretEl.classList.add('detected');
+          detections++;
+
+          // Add to feed
+          const feedItem = document.createElement('div');
+          feedItem.className = 'demo-feed-item';
+          feedItem.innerHTML = '<span class="demo-feed-dot" style="background:' + line.color + '"></span>' +
+            '<span class="demo-feed-label">' + line.label + '</span>' +
+            '<span class="demo-feed-time">' + (Math.random() * 0.08 + 0.01).toFixed(3) + 'ms</span>';
+          feed.insertBefore(feedItem, feed.firstChild);
+          setTimeout(() => feedItem.classList.add('visible'), 10);
+
+          statusText.textContent = 'Scanning... ' + detections + ' found';
+        }
+      }, 300);
+    } else {
+      codeEl.textContent = line.text;
+      lineEl.appendChild(numEl);
+      lineEl.appendChild(codeEl);
+      editor.appendChild(lineEl);
+      editor.scrollTop = editor.scrollHeight;
+    }
+
+    lineIndex++;
+    const delay = line.text === '' ? 80 : line.type ? 400 : 120;
+    setTimeout(addLine, delay);
+  }
+
+  // Start demo when section scrolls into view
+  let started = false;
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting && !started) {
+      started = true;
+      statusText.textContent = 'Screen share detected...';
+      statusDot.style.background = '#f59e0b';
+      setTimeout(() => {
+        statusText.textContent = 'Scanning...';
+        statusDot.style.background = '#ef4444';
+        addLine();
+      }, 800);
+    }
+  }, { threshold: 0.3 });
+  observer.observe(document.querySelector('.demo-container'));
+})();
 </script>
 
 </body>
