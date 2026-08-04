@@ -24,133 +24,167 @@
 
 <section class="hero">
   <div class="wrap">
-    <h1 class="fade-up"><span class="word">Stop</span> <span class="word">leaking</span> <span class="word">secrets</span><br><span class="word">on</span> <span class="accent">screen share</span></h1>
-    <p class="fade-up fade-up-d1"><span class="iw">ShareStopper watches your screen</span> <span class="iw">during Zoom, Meet, Teams, Discord, and Slack calls.</span> <span class="iw">When it spots an API key, password, credit card,</span> <span class="iw">or any sensitive data —</span> <span class="iw">it hides it before anyone else can see it.</span></p>
+    <h1>Stop leaking secrets<br>on <span class="accent">screen share</span></h1>
+    <p>ShareStopper watches your screen during Zoom, Meet, Teams, Discord, and Slack calls. When it spots an API key, password, credit card, or any sensitive data — it hides it before anyone else can see it.</p>
 
-    <div class="install-block fade-up fade-up-d2" style="max-width:560px;margin:36px auto 0">
+    <div class="install-block" style="max-width:560px;margin:36px auto 0">
       <div class="install-header">
         <div class="circles"><span class="r"></span><span class="y"></span><span class="g"></span></div>
         <span class="title">Terminal</span>
       </div>
       <div class="install-body">
         <div class="comment"># Install ShareStopper</div>
-        <div class="cmd" onclick="navigator.clipboard.writeText('npm install -g sharestopper');this.querySelector('.hl').textContent='copied!';setTimeout(()=>this.querySelector('.hl').textContent='npm install -g',800)"><span class="hl">npm install -g</span> sharestopper</div>
+        <div class="cmd" id="install-cmd"><span class="hl">curl -fsSL</span> https://raw.githubusercontent.com/TaxCollector23/sharestopper/main/website/install.sh <span class="hl">|</span> bash</div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- How it works — dense, no cards -->
 <section>
   <div class="wrap">
     <div class="sh">
-      <div class="label fade-up">What it does</div>
-      <h2 class="fade-up fade-up-d1"><span class="iw">Real-time privacy protection</span> <span class="iw">that runs locally</span></h2>
+      <div class="label">How it works</div>
+      <h2>Five stages, under 600ms</h2>
     </div>
-    <div class="feature-grid">
-      <div class="feature fade-up">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <div class="pipeline">
+      <div class="pipe-step" data-stage="detect">
+        <div class="pipe-num">1</div>
+        <div class="pipe-info">
+          <strong>Screen sharing detected</strong>
+          <p>Monitors Zoom, Google Meet, Teams, Discord, and Slack for active sharing using macOS system APIs and process inspection. Activates automatically — no manual toggle.</p>
         </div>
-        <strong>Activates automatically</strong>
-        <span>Detects when Zoom, Google Meet, Teams, Discord, or Slack begins sharing your screen. No manual toggle — it just works.</span>
+        <div class="pipe-time">~0ms</div>
       </div>
-      <div class="feature fade-up fade-up-d1">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <div class="pipe-step" data-stage="capture">
+        <div class="pipe-num">2</div>
+        <div class="pipe-info">
+          <strong>Screen captured</strong>
+          <p>Native-resolution capture via macOS <code>screencapture</code>. Frame differencing means only changed regions get re-scanned on subsequent passes.</p>
         </div>
-        <strong>29 data types detected</strong>
-        <span>API keys, passwords, credit cards, JWTs, SSH keys, database URIs, emails, IPs, webhooks, environment variables, and more.</span>
+        <div class="pipe-time">~200ms</div>
       </div>
-      <div class="feature fade-up fade-up-d2">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      <div class="pipe-step" data-stage="ocr">
+        <div class="pipe-num">3</div>
+        <div class="pipe-info">
+          <strong>Text extracted</strong>
+          <p>Tesseract.js OCR extracts all visible text with word-level bounding boxes, giving precise coordinates for overlay placement.</p>
         </div>
-        <strong>Sub-millisecond detection</strong>
-        <span>Pattern matching takes 0.11ms. Full pipeline — capture, OCR, detect, overlay — runs under 600ms. Hidden before anyone can read it.</span>
+        <div class="pipe-time">~400ms</div>
       </div>
-      <div class="feature fade-up fade-up-d3">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <div class="pipe-step" data-stage="match">
+        <div class="pipe-num">4</div>
+        <div class="pipe-info">
+          <strong>Patterns matched</strong>
+          <p>26 compiled regex patterns scan the text for API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks, env vars, and more. <a href="/benchmarks">See benchmarks.</a></p>
         </div>
-        <strong>Runs on localhost</strong>
-        <span>Everything stays on your machine. No cloud, no telemetry, no data leaves your network. The dashboard runs at localhost:1011.</span>
+        <div class="pipe-time">0.11ms</div>
       </div>
-      <div class="feature fade-up fade-up-d4">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <div class="pipe-step" data-stage="overlay">
+        <div class="pipe-num">5</div>
+        <div class="pipe-info">
+          <strong>Overlay rendered</strong>
+          <p>Block, blur, or pixelate overlays appear over matched regions. Invisible to your workflow, opaque to everyone on the call.</p>
         </div>
-        <strong>Live dashboard</strong>
-        <span>See every detection in real time — what was caught, which app it came from, confidence level, and timing. Edit rules from the browser.</span>
-      </div>
-      <div class="feature fade-up fade-up-d5">
-        <div class="feature-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        </div>
-        <strong>Open source</strong>
-        <span>MIT licensed. Every regex pattern, every detection rule — fully inspectable and customizable. Add your own patterns or adjust sensitivity.</span>
+        <div class="pipe-time">&lt;1ms</div>
       </div>
     </div>
   </div>
 </section>
 
-<section style="padding-top:0">
-  <div class="wrap">
-    <div class="sh">
-      <div class="label">Pipeline</div>
-      <h2><span class="iw">How it works</span></h2>
-    </div>
-    <div class="steps">
-      <div class="step"><div class="num">01</div><div><strong>Screen sharing detected</strong><span>Monitors Zoom, Google Meet, Teams, Discord, and Slack for active screen sharing using macOS system APIs and process inspection.</span></div></div>
-      <div class="step"><div class="num">02</div><div><strong>Screen captured</strong><span>Captures the current display at native resolution. Frame differencing means only changed regions get re-scanned.</span></div></div>
-      <div class="step"><div class="num">03</div><div><strong>Text extracted via OCR</strong><span>Tesseract.js extracts all visible text with word-level bounding boxes for precise overlay positioning.</span></div></div>
-      <div class="step"><div class="num">04</div><div><strong>Pattern matching in 0.1ms</strong><span>26 compiled regex patterns run against extracted text — API keys, passwords, credit cards, IPs, emails, JWTs, SSH keys, database URIs, webhooks.</span></div></div>
-      <div class="step"><div class="num">05</div><div><strong>Overlay rendered</strong><span>Block, blur, or pixelate overlays appear over matched regions. Invisible to your workflow, opaque to viewers on the call.</span></div></div>
-    </div>
-  </div>
-</section>
-
+<!-- What it catches — inline list, not a grid of cards -->
 <section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
       <div class="label">Coverage</div>
-      <h2><span class="iw">What it catches</span></h2>
-      <p><span class="iw">Every pattern is tested against real-world formats with 61 tests passing.</span> <span class="iw">Zero false positives on normal code and conversation.</span></p>
+      <h2>29 sensitive data types</h2>
+      <p>Every pattern tested against real-world formats. 61 tests passing. Zero false positives on normal code and conversation.</p>
     </div>
-    <div class="detect-grid" id="detect-grid">
-      <div class="detect-item"><span class="dot" style="background:#34d399"></span>API Keys</div>
-      <div class="detect-item"><span class="dot" style="background:#f59e0b"></span>Secret Keys</div>
-      <div class="detect-item"><span class="dot" style="background:#a855f7"></span>Access Tokens</div>
-      <div class="detect-item"><span class="dot" style="background:#f43f5e"></span>Credit Card Numbers</div>
-      <div class="detect-item"><span class="dot" style="background:#ef4444"></span>Passwords</div>
-      <div class="detect-item"><span class="dot" style="background:#06b6d4"></span>JWT Tokens</div>
-      <div class="detect-item"><span class="dot" style="background:#dc2626"></span>SSH / RSA Keys</div>
-      <div class="detect-item"><span class="dot" style="background:#22c55e"></span>Database URIs</div>
-      <div class="detect-item"><span class="dot" style="background:#60a5fa"></span>Connection Strings</div>
-      <div class="detect-item"><span class="dot" style="background:#0ea5e9"></span>Email Addresses</div>
-      <div class="detect-item"><span class="dot" style="background:#14b8a6"></span>Phone Numbers</div>
-      <div class="detect-item"><span class="dot" style="background:#eab308"></span>IP Addresses</div>
-      <div class="detect-item"><span class="dot" style="background:#a78bfa"></span>Webhook URLs</div>
-      <div class="detect-item"><span class="dot" style="background:#f59e0b"></span>OAuth Secrets</div>
-      <div class="detect-item"><span class="dot" style="background:#d97706"></span>Environment Variables</div>
-      <div class="detect-item"><span class="dot" style="background:#fb923c"></span>Service Credentials</div>
-      <div class="detect-item"><span class="dot" style="background:#06b6d4"></span>Bearer Tokens</div>
-      <div class="detect-item"><span class="dot" style="background:#d97706"></span>Session Cookies</div>
+    <div class="type-list">
+      <div class="type-group">
+        <h4>Credentials</h4>
+        <ul>
+          <li>API keys <span class="dim">(provider-agnostic + specific formats)</span></li>
+          <li>Secret keys &amp; access tokens</li>
+          <li>Passwords <span class="dim">(env vars, inline, DB connection strings)</span></li>
+          <li>OAuth client secrets</li>
+          <li>Bearer tokens</li>
+          <li>Session cookies</li>
+          <li>Environment variables</li>
+        </ul>
+      </div>
+      <div class="type-group">
+        <h4>Tokens &amp; Keys</h4>
+        <ul>
+          <li>JWT tokens <span class="dim">(three-segment base64)</span></li>
+          <li>SSH / RSA private key headers</li>
+          <li>Webhook URLs</li>
+          <li>Service credentials</li>
+        </ul>
+      </div>
+      <div class="type-group">
+        <h4>Financial &amp; PII</h4>
+        <ul>
+          <li>Credit card numbers <span class="dim">(Visa, Mastercard, Amex)</span></li>
+          <li>Email addresses</li>
+          <li>Phone numbers <span class="dim">(US, international)</span></li>
+          <li>IPv4 addresses <span class="dim">(public + private ranges)</span></li>
+        </ul>
+      </div>
+      <div class="type-group">
+        <h4>Infrastructure</h4>
+        <ul>
+          <li>Database URIs <span class="dim">(MongoDB, Postgres)</span></li>
+          <li>Connection strings</li>
+          <li>Webhook URLs</li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- Supported apps — simple inline -->
 <section style="padding-top:0">
   <div class="wrap">
     <div class="sh">
       <div class="label">Integrations</div>
-      <h2><span class="iw">Works with the tools you already use</span></h2>
+      <h2>Auto-detects screen sharing</h2>
+      <p>No configuration needed. ShareStopper watches for these apps and activates the moment you start sharing.</p>
     </div>
-    <div class="apps-row">
-      <div class="app-item"><div class="name">Zoom</div><div class="method">Process + window detection</div></div>
-      <div class="app-item"><div class="name">Google Meet</div><div class="method">Chrome tab monitoring</div></div>
-      <div class="app-item"><div class="name">Teams</div><div class="method">Window title inspection</div></div>
-      <div class="app-item"><div class="name">Discord</div><div class="method">Go Live detection</div></div>
-      <div class="app-item"><div class="name">Slack</div><div class="method">Huddle monitoring</div></div>
+    <div class="app-list">
+      <div class="app-row"><strong>Zoom</strong><span>Process + window title detection via CptHost / ZoomShareToolbar</span></div>
+      <div class="app-row"><strong>Google Meet</strong><span>Chrome tab title monitoring + macOS screen recording indicator</span></div>
+      <div class="app-row"><strong>Teams</strong><span>Window title inspection for sharing state</span></div>
+      <div class="app-row"><strong>Discord</strong><span>Go Live process and window detection</span></div>
+      <div class="app-row"><strong>Slack</strong><span>Huddle sharing state via window monitoring</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- What you get -->
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sh">
+      <div class="label">Dashboard</div>
+      <h2>Everything at localhost:1011</h2>
+    </div>
+    <div class="dash-points">
+      <div class="dash-point">
+        <strong>Live feed</strong>
+        <p>Every detection as it happens — type, source app, confidence, timing.</p>
+      </div>
+      <div class="dash-point">
+        <strong>Detection rules</strong>
+        <p>Toggle individual patterns on/off, adjust confidence thresholds per type.</p>
+      </div>
+      <div class="dash-point">
+        <strong>Profiles</strong>
+        <p>Developer, business, student, streamer — or build a custom set of rules.</p>
+      </div>
+      <div class="dash-point">
+        <strong>Analytics</strong>
+        <p>Detection counts by type, timeline, false positive rate over time.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -167,48 +201,20 @@
 </footer>
 
 <script>
-document.querySelectorAll('.detect-item').forEach(el => {
+const cmd = document.getElementById('install-cmd');
+cmd.style.cursor = 'pointer';
+cmd.title = 'Click to copy';
+cmd.addEventListener('click', () => {
+  navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/TaxCollector23/sharestopper/main/website/install.sh | bash');
+  cmd.dataset.copied = 'true';
+  setTimeout(() => delete cmd.dataset.copied, 1200);
+});
+
+document.querySelectorAll('.pipe-step').forEach(el => {
   el.addEventListener('click', () => {
-    el.classList.toggle('clicked');
+    document.querySelectorAll('.pipe-step').forEach(s => s.classList.remove('expanded'));
+    el.classList.toggle('expanded');
   });
-});
-
-document.querySelectorAll('.feature, .step, .app-item, .pipe-stage').forEach(el => {
-  el.addEventListener('click', function(e) {
-    const ripple = document.createElement('span');
-    ripple.className = 'ripple';
-    const rect = this.getBoundingClientRect();
-    const size = Math.max(rect.width, rect.height);
-    ripple.style.width = ripple.style.height = size + 'px';
-    ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
-    ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
-    this.style.position = 'relative';
-    this.style.overflow = 'hidden';
-    this.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 500);
-  });
-});
-
-document.querySelectorAll('.install-body .cmd').forEach(el => {
-  el.title = 'Click to copy';
-});
-
-document.querySelectorAll('.fade-up').forEach(el => {
-  const rect = el.getBoundingClientRect();
-  if (rect.top > window.innerHeight) {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.animation = 'none';
-    const obs = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        el.style.animation = '';
-        el.style.opacity = '';
-        el.style.transform = '';
-        obs.disconnect();
-      }
-    }, { threshold: 0.1 });
-    obs.observe(el);
-  }
 });
 </script>
 

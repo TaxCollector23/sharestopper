@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "sharestopper-dev",
-      "runtimeExecutable": "/Users/rangan/Desktop/sharestopper/node_modules/.bin/vite",
-      "runtimeArgs": ["--host"],
-      "port": 5173
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["website/server.mjs"],
+      "port": 1011
     }
   ]
 }
