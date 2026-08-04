@@ -1,4 +1,7 @@
 {
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "framework": null,
   "rewrites": [
     { "source": "/benchmarks", "destination": "/benchmarks.html" },
     { "source": "/docs", "destination": "/docs.html" }
@@ -10,5 +13,6 @@
         { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
       ]
     }
-  ]
+  ],
+  "cleanUrls": true
 }
