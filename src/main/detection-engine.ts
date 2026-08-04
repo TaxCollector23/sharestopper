@@ -15,9 +15,25 @@ interface Pattern {
   label: string
   regex: RegExp
   confidence: number
+  prefixes: string[]
 }
 
-const PATTERNS: Pattern[] = [
+function extractPrefixes(regex: RegExp): string[] {
+  const src = regex.source
+  const prefixes: string[] = []
+  const literal = src.match(/^([a-zA-Z0-9_:/-]{3,})/)
+  if (literal) prefixes.push(literal[1].toLowerCase())
+  const altMatch = src.match(/^\(\?:([^)]+)\)/)
+  if (altMatch) {
+    for (const alt of altMatch[1].split('|')) {
+      const clean = alt.replace(/\\/g, '').toLowerCase()
+      if (clean.length >= 3) prefixes.push(clean)
+    }
+  }
+  return prefixes
+}
+
+const RAW_PATTERNS: Omit<Pattern, 'prefixes'>[] = [
   { type: 'openai-key', label: 'OpenAI API Key', regex: /sk-[a-zA-Z0-9_-]{20,}/g, confidence: 0.97 },
   { type: 'anthropic-key', label: 'Anthropic API Key', regex: /sk-ant-[a-zA-Z0-9_-]{20,}/g, confidence: 0.97 },
   { type: 'google-ai-key', label: 'Google AI Key', regex: /AIza[0-9A-Za-z_-]{35}/g, confidence: 0.95 },
@@ -46,20 +62,56 @@ const PATTERNS: Pattern[] = [
   { type: 'ipv4', label: 'IPv4 Address', regex: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g, confidence: 0.65 },
   { type: 'private-ip', label: 'Private IP', regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g, confidence: 0.80 },
   { type: 'oauth-secret', label: 'OAuth Secret', regex: /(?:client[_-]?secret|oauth[_-]?secret)\s*[:=]\s*['"]?[a-zA-Z0-9_\-]{16,}/gi, confidence: 0.88 },
+  { type: 'firebase-config', label: 'Firebase Config', regex: /[a-z0-9-]+\.firebaseio\.com|[a-z0-9-]+\.firebaseapp\.com/g, confidence: 0.82 },
+  { type: 'supabase-url', label: 'Supabase URL', regex: /https:\/\/[a-z0-9]+\.supabase\.co/g, confidence: 0.85 },
+  { type: 'cookie', label: 'Session Cookie', regex: /(?:session|sess|sid|connect\.sid)\s*[:=]\s*['"]?[a-zA-Z0-9_\-/.%]{16,}/gi, confidence: 0.80 },
+  { type: 'generic-secret', label: 'Hex Secret', regex: /(?:secret|token|private)\s*[:=]\s*['"]?[a-f0-9]{32,}/gi, confidence: 0.72 },
 ]
 
+const PATTERNS: Pattern[] = RAW_PATTERNS.map(p => ({
+  ...p,
+  prefixes: extractPrefixes(p.regex),
+}))
+
+const HIGH_CONFIDENCE_PATTERNS = PATTERNS.filter(p => p.confidence >= 0.90)
+const LOW_CONFIDENCE_PATTERNS = PATTERNS.filter(p => p.confidence < 0.90)
+
 export class DetectionEngine {
+  private textLowerCache = ''
+  private textLowerFor = ''
+
+  private getTextLower(text: string): string {
+    if (text !== this.textLowerFor) {
+      this.textLowerFor = text
+      this.textLowerCache = text.toLowerCase()
+    }
+    return this.textLowerCache
+  }
+
+  private canMatch(text: string, textLower: string, pattern: Pattern): boolean {
+    if (pattern.prefixes.length === 0) return true
+    for (const prefix of pattern.prefixes) {
+      if (textLower.includes(prefix)) return true
+    }
+    return false
+  }
+
   detect(text: string): DetectionResult[] {
     const start = performance.now()
+    if (text.length === 0) return []
+
+    const textLower = this.getTextLower(text)
     const results: DetectionResult[] = []
     const seen = new Set<string>()
 
     for (const pattern of PATTERNS) {
+      if (!this.canMatch(text, textLower, pattern)) continue
+
       pattern.regex.lastIndex = 0
       let match: RegExpExecArray | null
       while ((match = pattern.regex.exec(text)) !== null) {
         const value = match[0]
-        const key = `${pattern.type}:${value}`
+        const key = `${pattern.type}:${match.index}:${value.length}`
         if (!seen.has(key)) {
           seen.add(key)
           results.push({
@@ -76,6 +128,47 @@ export class DetectionEngine {
     }
 
     return results.sort((a, b) => b.confidence - a.confidence)
+  }
+
+  detectFast(text: string): DetectionResult[] {
+    const start = performance.now()
+    if (text.length === 0) return []
+
+    const textLower = this.getTextLower(text)
+    const results: DetectionResult[] = []
+    const seen = new Set<string>()
+
+    for (const pattern of HIGH_CONFIDENCE_PATTERNS) {
+      if (!this.canMatch(text, textLower, pattern)) continue
+
+      pattern.regex.lastIndex = 0
+      let match: RegExpExecArray | null
+      while ((match = pattern.regex.exec(text)) !== null) {
+        const value = match[0]
+        const key = `${pattern.type}:${match.index}:${value.length}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          results.push({
+            type: pattern.type,
+            label: pattern.label,
+            value: value.length > 60 ? value.slice(0, 57) + '...' : value,
+            confidence: pattern.confidence,
+            index: match.index,
+            length: value.length,
+            detectionTimeMs: performance.now() - start,
+          })
+        }
+      }
+    }
+
+    return results
+  }
+
+  detectIncremental(text: string, changedRegions: Array<{ start: number; end: number }>): DetectionResult[] {
+    if (changedRegions.length === 0) return []
+    const chunks = changedRegions.map(r => text.slice(Math.max(0, r.start - 100), Math.min(text.length, r.end + 100)))
+    const combined = chunks.join('\n')
+    return this.detect(combined)
   }
 
   benchmark(text: string, iterations = 100): { avgMs: number; minMs: number; maxMs: number; medianMs: number; p99Ms: number } {

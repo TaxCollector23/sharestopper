@@ -1,20 +1,86 @@
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { EventEmitter } from 'events'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 export interface ScreenSharingState {
   isSharing: boolean
   app: 'zoom' | 'google-meet' | 'teams' | 'discord' | 'slack' | null
   windowName: string | null
   pid: number | null
+  detectionTimeMs: number
 }
+
+const BATCH_SCRIPT = `
+on run
+  set output to ""
+  tell application "System Events"
+    set procNames to name of every process
+
+    -- Zoom
+    if procNames contains "zoom.us" then
+      try
+        tell process "zoom.us"
+          set zoomWins to name of every window as text
+        end tell
+        set output to output & "ZOOM:" & zoomWins & "\\n"
+      end try
+    end if
+
+    -- Teams
+    if procNames contains "Microsoft Teams" then
+      try
+        tell process "Microsoft Teams"
+          set teamsWins to name of every window as text
+        end tell
+        set output to output & "TEAMS:" & teamsWins & "\\n"
+      end try
+    end if
+
+    -- Discord
+    if procNames contains "Discord" then
+      try
+        tell process "Discord"
+          set discordWins to name of every window as text
+        end tell
+        set output to output & "DISCORD:" & discordWins & "\\n"
+      end try
+    end if
+
+    -- Slack
+    if procNames contains "Slack" then
+      try
+        tell process "Slack"
+          set slackWins to name of every window as text
+        end tell
+        set output to output & "SLACK:" & slackWins & "\\n"
+      end try
+    end if
+
+    -- Chrome (for Google Meet)
+    if procNames contains "Google Chrome" then
+      try
+        tell process "Google Chrome"
+          set chromeWins to name of every window as text
+        end tell
+        set output to output & "CHROME:" & chromeWins & "\\n"
+      end try
+    end if
+
+  end tell
+  return output
+end run
+`
+
+const SHARING_KEYWORDS = ['share', 'screen share', 'sharing', 'presenting']
+const MEET_KEYWORDS = ['meet.google.com', 'google meet']
 
 export class ScreenSharingDetector extends EventEmitter {
   private pollInterval: NodeJS.Timeout | null = null
-  private lastState: ScreenSharingState = { isSharing: false, app: null, windowName: null, pid: null }
+  private lastState: ScreenSharingState = { isSharing: false, app: null, windowName: null, pid: null, detectionTimeMs: 0 }
   private intervalMs: number
+  private consecutiveErrors = 0
 
   constructor(intervalMs = 1000) {
     super()
@@ -38,6 +104,8 @@ export class ScreenSharingDetector extends EventEmitter {
   private async poll() {
     try {
       const state = await this.detect()
+      this.consecutiveErrors = 0
+
       if (state.isSharing !== this.lastState.isSharing || state.app !== this.lastState.app) {
         this.emit('change', state, this.lastState)
         if (state.isSharing && !this.lastState.isSharing) {
@@ -48,231 +116,94 @@ export class ScreenSharingDetector extends EventEmitter {
       }
       this.lastState = state
     } catch (err) {
+      this.consecutiveErrors++
       this.emit('error', err)
+      if (this.consecutiveErrors > 10) {
+        this.emit('error', new Error('Too many consecutive errors, backing off'))
+        this.intervalMs = Math.min(this.intervalMs * 2, 10000)
+      }
     }
   }
 
   async detect(): Promise<ScreenSharingState> {
-    const [zoom, meet, teams, discord, slack] = await Promise.all([
-      this.detectZoomSharing(),
-      this.detectGoogleMeetSharing(),
-      this.detectTeamsSharing(),
-      this.detectDiscordSharing(),
-      this.detectSlackSharing(),
-    ])
+    const start = performance.now()
 
-    return zoom || meet || teams || discord || slack || {
-      isSharing: false,
-      app: null,
-      windowName: null,
-      pid: null,
-    }
-  }
-
-  private async detectZoomSharing(): Promise<ScreenSharingState | null> {
     try {
-      // Check if Zoom is running and has a screen sharing session
-      // Zoom creates a "zoom share toolbar" or "zoom share statusbar" window when sharing
-      const { stdout } = await execAsync(
-        `osascript -e 'tell application "System Events" to get name of every process whose name contains "zoom"' 2>/dev/null`
-      )
-      if (!stdout.trim()) return null
+      const { stdout } = await execFileAsync('osascript', ['-e', BATCH_SCRIPT], { timeout: 5000 })
+      const lines = stdout.split('\n').filter(Boolean)
+      const detectionTimeMs = performance.now() - start
 
-      // Check for Zoom sharing indicator windows
-      const { stdout: windows } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            tell process "zoom.us"
-              set windowNames to name of every window
-              return windowNames as text
-            end tell
-          end tell
-        ' 2>/dev/null`
-      )
+      for (const line of lines) {
+        const lower = line.toLowerCase()
 
-      const windowText = windows.toLowerCase()
-      const isSharing = windowText.includes('share') ||
-                        windowText.includes('screen share') ||
-                        windowText.includes('sharing')
-
-      if (isSharing) {
-        const { stdout: pidOut } = await execAsync('pgrep -x "zoom.us" 2>/dev/null')
-        return {
-          isSharing: true,
-          app: 'zoom',
-          windowName: 'Zoom Screen Share',
-          pid: parseInt(pidOut.trim()) || null,
+        if (line.startsWith('ZOOM:') && SHARING_KEYWORDS.some(k => lower.includes(k))) {
+          const pid = await this.getPid('zoom.us')
+          return { isSharing: true, app: 'zoom', windowName: 'Zoom Screen Share', pid, detectionTimeMs }
         }
-      }
 
-      // Fallback: check if the Zoom sharing toolbar process exists
-      const { stdout: toolbarCheck } = await execAsync(
-        'pgrep -f "CptHost\\|zoomshare\\|ZoomShareToolbar" 2>/dev/null'
-      )
-      if (toolbarCheck.trim()) {
-        return {
-          isSharing: true,
-          app: 'zoom',
-          windowName: 'Zoom Screen Share',
-          pid: parseInt(toolbarCheck.trim().split('\n')[0]) || null,
+        if (line.startsWith('TEAMS:') && SHARING_KEYWORDS.some(k => lower.includes(k))) {
+          const pid = await this.getPid('Microsoft Teams')
+          return { isSharing: true, app: 'teams', windowName: 'Teams Screen Share', pid, detectionTimeMs }
         }
-      }
-    } catch {
-      // Zoom not running
-    }
-    return null
-  }
 
-  private async detectGoogleMeetSharing(): Promise<ScreenSharingState | null> {
-    try {
-      // Google Meet runs in Chrome/Edge/etc. We detect it by checking
-      // if a browser is capturing the screen via macOS screen recording indicators
-      const { stdout } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            set chromeRunning to (name of processes) contains "Google Chrome"
-            if chromeRunning then
-              tell process "Google Chrome"
-                set windowNames to name of every window
-                return windowNames as text
-              end tell
-            end if
-          end tell
-        ' 2>/dev/null`
-      )
+        if (line.startsWith('DISCORD:') && (lower.includes('screen share') || lower.includes('go live'))) {
+          const pid = await this.getPid('Discord')
+          return { isSharing: true, app: 'discord', windowName: 'Discord Screen Share', pid, detectionTimeMs }
+        }
 
-      const windowText = stdout.toLowerCase()
-      const isMeet = windowText.includes('meet.google.com') || windowText.includes('google meet')
+        if (line.startsWith('SLACK:') && (lower.includes('screen share') || lower.includes('sharing screen'))) {
+          const pid = await this.getPid('Slack')
+          return { isSharing: true, app: 'slack', windowName: 'Slack Screen Share', pid, detectionTimeMs }
+        }
 
-      if (isMeet) {
-        // Check if Chrome is using screen capture via the macOS indicator
-        const { stdout: mediaCheck } = await execAsync(
-          `osascript -e '
-            tell application "System Events"
-              get value of attribute "AXIsScreenSharingEnabled" of process "Google Chrome"
-            end tell
-          ' 2>/dev/null`
-        ).catch(() => ({ stdout: '' }))
-
-        // Also check the macOS screen recording indicator in the menu bar
-        const { stdout: screenCapture } = await execAsync(
-          'log show --predicate \'subsystem == "com.apple.screencapture"\' --last 5s --style compact 2>/dev/null | head -5'
-        ).catch(() => ({ stdout: '' }))
-
-        // Check if Chrome has the screen sharing dot visible in Control Center
-        const hasSharingIndicator = await this.checkScreenRecordingIndicator('Google Chrome')
-
-        if (hasSharingIndicator || mediaCheck.includes('true')) {
-          const { stdout: pidOut } = await execAsync('pgrep -x "Google Chrome" 2>/dev/null')
-          return {
-            isSharing: true,
-            app: 'google-meet',
-            windowName: 'Google Meet Screen Share',
-            pid: parseInt(pidOut.trim()) || null,
+        if (line.startsWith('CHROME:') && MEET_KEYWORDS.some(k => lower.includes(k))) {
+          const hasSharingIndicator = await this.checkScreenRecordingIndicator()
+          if (hasSharingIndicator) {
+            const pid = await this.getPid('Google Chrome')
+            return { isSharing: true, app: 'google-meet', windowName: 'Google Meet Screen Share', pid, detectionTimeMs }
           }
         }
       }
+
+      // Fallback: check for Zoom share toolbar process
+      try {
+        const { stdout: toolbarPid } = await execFileAsync('pgrep', ['-f', 'CptHost|zoomshare|ZoomShareToolbar'], { timeout: 2000 })
+        if (toolbarPid.trim()) {
+          return {
+            isSharing: true,
+            app: 'zoom',
+            windowName: 'Zoom Screen Share',
+            pid: parseInt(toolbarPid.trim().split('\n')[0]) || null,
+            detectionTimeMs: performance.now() - start,
+          }
+        }
+      } catch {}
+
+      return { isSharing: false, app: null, windowName: null, pid: null, detectionTimeMs: performance.now() - start }
     } catch {
-      // Chrome not running
+      return { isSharing: false, app: null, windowName: null, pid: null, detectionTimeMs: performance.now() - start }
     }
-    return null
   }
 
-  private async detectTeamsSharing(): Promise<ScreenSharingState | null> {
+  private async getPid(processName: string): Promise<number | null> {
     try {
-      const { stdout } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            if (name of processes) contains "Microsoft Teams" then
-              tell process "Microsoft Teams"
-                return name of every window as text
-              end tell
-            end if
-          end tell
-        ' 2>/dev/null`
-      )
-      const windowText = stdout.toLowerCase()
-      if (windowText.includes('sharing') || windowText.includes('screen share') || windowText.includes('presenting')) {
-        const { stdout: pidOut } = await execAsync('pgrep -f "Microsoft Teams" 2>/dev/null')
-        return {
-          isSharing: true,
-          app: 'teams',
-          windowName: 'Teams Screen Share',
-          pid: parseInt(pidOut.trim().split('\n')[0]) || null,
-        }
-      }
-    } catch {}
-    return null
+      const { stdout } = await execFileAsync('pgrep', ['-x', processName], { timeout: 2000 })
+      return parseInt(stdout.trim().split('\n')[0]) || null
+    } catch {
+      return null
+    }
   }
 
-  private async detectDiscordSharing(): Promise<ScreenSharingState | null> {
+  private async checkScreenRecordingIndicator(): Promise<boolean> {
     try {
-      const { stdout } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            if (name of processes) contains "Discord" then
-              tell process "Discord"
-                return name of every window as text
-              end tell
-            end if
-          end tell
-        ' 2>/dev/null`
-      )
-      if (stdout.toLowerCase().includes('screen share') || stdout.toLowerCase().includes('go live')) {
-        const { stdout: pidOut } = await execAsync('pgrep -x Discord 2>/dev/null')
-        return {
-          isSharing: true,
-          app: 'discord',
-          windowName: 'Discord Screen Share',
-          pid: parseInt(pidOut.trim()) || null,
-        }
-      }
-    } catch {}
-    return null
-  }
-
-  private async detectSlackSharing(): Promise<ScreenSharingState | null> {
-    try {
-      const { stdout } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            if (name of processes) contains "Slack" then
-              tell process "Slack"
-                return name of every window as text
-              end tell
-            end if
-          end tell
-        ' 2>/dev/null`
-      )
-      if (stdout.toLowerCase().includes('screen share') || stdout.toLowerCase().includes('sharing screen')) {
-        const { stdout: pidOut } = await execAsync('pgrep -x Slack 2>/dev/null')
-        return {
-          isSharing: true,
-          app: 'slack',
-          windowName: 'Slack Screen Share',
-          pid: parseInt(pidOut.trim()) || null,
-        }
-      }
-    } catch {}
-    return null
-  }
-
-  private async checkScreenRecordingIndicator(processName: string): Promise<boolean> {
-    try {
-      // Check macOS screen recording privacy indicator
-      // When an app captures the screen, macOS shows an orange dot in the menu bar
-      // and lists the app in System Preferences > Privacy > Screen Recording
-      const { stdout } = await execAsync(
-        `osascript -e '
-          tell application "System Events"
-            try
-              set menuExtras to name of every menu bar item of menu bar 1 of process "SystemUIServer"
-              return menuExtras as text
-            end try
-          end tell
-        ' 2>/dev/null`
-      )
-      // The screen recording indicator appears when apps are actively capturing
+      const { stdout } = await execFileAsync('osascript', ['-e', `
+        tell application "System Events"
+          try
+            set menuExtras to name of every menu bar item of menu bar 1 of process "SystemUIServer"
+            return menuExtras as text
+          end try
+        end tell
+      `], { timeout: 3000 })
       return stdout.toLowerCase().includes('screen') || false
     } catch {
       return false
@@ -281,5 +212,9 @@ export class ScreenSharingDetector extends EventEmitter {
 
   getState(): ScreenSharingState {
     return { ...this.lastState }
+  }
+
+  getIntervalMs(): number {
+    return this.intervalMs
   }
 }

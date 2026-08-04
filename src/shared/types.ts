@@ -63,3 +63,13 @@ export interface AppContext {
   sensitivity: 'high' | 'medium' | 'low'
   autoHide: boolean
 }
+
+export interface PipelineMetrics {
+  captureMs: number
+  ocrMs: number
+  detectionMs: number
+  overlayMs: number
+  totalMs: number
+  frameSkipped: boolean
+  detectionsFound: number
+}

@@ -34,6 +34,10 @@ const PATTERNS = [
   { type: 'ipv4', label: 'IPv4 Address', regex: /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g, confidence: 0.65 },
   { type: 'private-ip', label: 'Private IP', regex: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b/g, confidence: 0.80 },
   { type: 'oauth-secret', label: 'OAuth Secret', regex: /(?:client[_-]?secret|oauth[_-]?secret)\s*[:=]\s*['"]?[a-zA-Z0-9_\-]{16,}/gi, confidence: 0.88 },
+  { type: 'firebase-config', label: 'Firebase Config', regex: /[a-z0-9-]+\.firebaseio\.com|[a-z0-9-]+\.firebaseapp\.com/g, confidence: 0.82 },
+  { type: 'supabase-url', label: 'Supabase URL', regex: /https:\/\/[a-z0-9]+\.supabase\.co/g, confidence: 0.85 },
+  { type: 'cookie', label: 'Session Cookie', regex: /(?:session|sess|sid|connect\.sid)\s*[:=]\s*['"]?[a-zA-Z0-9_\-/.%]{16,}/gi, confidence: 0.80 },
+  { type: 'generic-secret', label: 'Hex Secret', regex: /(?:secret|token|private)\s*[:=]\s*['"]?[a-f0-9]{32,}/gi, confidence: 0.72 },
 ]
 
 function detect(text) {
@@ -230,6 +234,28 @@ assertDetects(
   'https://discordapp.com/api/webhooks/9876543210/ABCDEF1234567890abcdefghijklmnop',
   'discord-webhook', 'Discord webhook (discordapp.com)'
 )
+
+// ── Firebase & Supabase ──────────────────────────────────────────
+
+section('Firebase & Supabase')
+assertDetects('my-app-12345.firebaseio.com', 'firebase-config', 'Firebase Realtime DB URL')
+assertDetects('my-project.firebaseapp.com', 'firebase-config', 'Firebase app URL')
+assertDetects('https://abcxyz123.supabase.co', 'supabase-url', 'Supabase project URL')
+assertDetects('https://qwerty99.supabase.co/rest/v1/users', 'supabase-url', 'Supabase API endpoint')
+
+// ── Cookies & Session Tokens ─────────────────────────────────────
+
+section('Cookies & Session Tokens')
+assertDetects('session=abc123def456ghi789jkl012', 'cookie', 'Session cookie')
+assertDetects('connect.sid=s%3AabcdefghijklmnopQRSTUV', 'cookie', 'Express session ID')
+assertDetects('sid: "xK9mT4qR8sN2pL5jH7gF"', 'cookie', 'SID in config')
+
+// ── Generic Hex Secrets ──────────────────────────────────────────
+
+section('Generic Hex Secrets')
+assertDetects('secret=abcdef0123456789abcdef0123456789ab', 'generic-secret', 'Hex secret value')
+assertDetects('token = "0123456789abcdef0123456789abcdef"', 'generic-secret', 'Hex token value')
+assertDetects('private: abcdef0123456789abcdef0123456789', 'generic-secret', 'Private hex key')
 
 // ── False Positive Resistance ─────────────────────────────────────
 

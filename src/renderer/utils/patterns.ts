@@ -28,7 +28,7 @@ export const DETECTION_PATTERNS: Pattern[] = [
   { type: 'postgres-url', label: 'Postgres URL', regex: /postgres(?:ql)?:\/\/[^\s"']+/, confidence: 0.94 },
   { type: 'db-connection', label: 'Database Connection', regex: /(?:mysql|mssql|jdbc):\/\/[^\s"']+/, confidence: 0.92 },
   { type: 'supabase-url', label: 'Supabase URL', regex: /https:\/\/[a-z0-9]+\.supabase\.co/, confidence: 0.90 },
-  { type: 'firebase-config', label: 'Firebase Config', regex: /firebase[a-zA-Z]*\.googleapis\.com/, confidence: 0.85 },
+  { type: 'firebase-config', label: 'Firebase Config', regex: /[a-z0-9-]+\.firebaseio\.com|[a-z0-9-]+\.firebaseapp\.com|firebase[a-zA-Z]*\.googleapis\.com/, confidence: 0.82 },
   { type: 'password', label: 'Password', regex: /(?:password|passwd|pwd)\s*[:=]\s*['"]?[^\s'"]{4,}/i, confidence: 0.82 },
   { type: 'password', label: 'Password', regex: /(?:PASSWORD|PASSWD|DB_PASSWORD|DB_PASS|MYSQL_PASSWORD|REDIS_PASSWORD)\s*=\s*[^\s]{4,}/, confidence: 0.90 },
   { type: 'env-file', label: 'Environment Variable', regex: /(?:SECRET|TOKEN|KEY|CREDENTIALS|AUTH)_?[A-Z_]*\s*=\s*['"]?[a-zA-Z0-9_\-/.]{8,}/i, confidence: 0.78 },
