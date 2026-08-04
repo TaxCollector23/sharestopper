@@ -8,7 +8,7 @@ set -e
 
 INSTALL_DIR="$HOME/.sharestopper"
 BIN_DIR="/usr/local/bin"
-REPO_URL="https://github.com/sharestopper/sharestopper"
+REPO_URL="https://github.com/TaxCollector23/sharestopper"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -27,7 +27,6 @@ echo -e "${GREEN}${BOLD}  ShareStopper${NC}"
 echo -e "${DIM}  Privacy firewall for screen sharing${NC}"
 echo ""
 
-# Check deps
 if [[ "$(uname)" != "Darwin" ]]; then
   error "ShareStopper currently supports macOS only"
 fi
@@ -43,7 +42,6 @@ fi
 
 log "Node $(node -v), npm $(npm -v)"
 
-# Install
 log "Installing to ${CYAN}${INSTALL_DIR}${NC}"
 
 if [[ -d "$INSTALL_DIR" ]]; then
@@ -55,11 +53,7 @@ mkdir -p "$INSTALL_DIR"
 
 if command -v git &>/dev/null; then
   git clone --depth 1 "$REPO_URL" "$INSTALL_DIR" 2>/dev/null || {
-    if [[ -f "$(dirname "$0")/../package.json" ]]; then
-      cp -R "$(dirname "$0")/.." "$INSTALL_DIR"
-    else
-      error "Failed to download ShareStopper"
-    fi
+    error "Failed to clone repository"
   }
 else
   curl -sL "${REPO_URL}/archive/refs/heads/main.tar.gz" | tar xz -C "$INSTALL_DIR" --strip-components=1
@@ -69,7 +63,6 @@ cd "$INSTALL_DIR"
 log "Installing dependencies..."
 npm install --production 2>/dev/null | tail -1
 
-# Create launcher
 cat > "$INSTALL_DIR/start.sh" << 'LAUNCHER'
 #!/bin/bash
 cd "$(dirname "$0")"
@@ -82,7 +75,6 @@ if [[ -d "$BIN_DIR" ]] && [[ -w "$BIN_DIR" ]]; then
   log "Installed ${CYAN}sharestopper${NC} command"
 fi
 
-# Auto-start via launchd
 PLIST_DIR="$HOME/Library/LaunchAgents"
 PLIST_FILE="$PLIST_DIR/com.sharestopper.app.plist"
 mkdir -p "$PLIST_DIR"
