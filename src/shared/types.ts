@@ -45,6 +45,8 @@ export type DetectionType =
 
 export type OverlayStyle = 'block' | 'blur' | 'pixelate'
 
+export type SharingApp = 'zoom' | 'google-meet' | 'teams' | 'discord' | 'slack' | 'webex' | 'facetime' | null
+
 export type ProtectionProfile = 'developer' | 'business' | 'student' | 'streamer' | 'custom'
 
 export interface ProtectionStats {
